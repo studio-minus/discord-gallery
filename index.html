@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Minus Community Gallery</title>
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three/build/three.module.min.js",
+                "SSRPass": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/postprocessing/SSRPass.js",
+                "AdaptiveToneMappingPass": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/postprocessing/AdaptiveToneMappingPass.js",
+                "UnrealBloomPass": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/postprocessing/UnrealBloomPass.js",
+                "EffectComposer": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/postprocessing/EffectComposer.js",
+                "RenderPass": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/postprocessing/RenderPass.js",
+                "GLTFLoader": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/loaders/GLTFLoader.js",
+                "RGBELoader": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/loaders/RGBELoader.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'GLTFLoader';
+        import { RGBELoader } from 'RGBELoader';
+        import { EffectComposer } from 'EffectComposer';
+        import { RenderPass } from 'RenderPass';
+        import { UnrealBloomPass } from 'UnrealBloomPass';
+        import { AdaptiveToneMappingPass } from 'AdaptiveToneMappingPass';
+        // import { SSRPass } from 'SSRPass';
+
+        const movementSpeed = 5;
+        const playerHeight = 1.5;
+        const lookSpeed = 0.2;
+
+        const keyStates = {};
+        let mouseDown = false;
+        let mousePos = { x: 0, y: 0 };
+        let previousMousePos = { x: 0, y: 0 };
+        let everythingIsLoaded = false;
+
+        const scene = new THREE.Scene();
+        const player = new THREE.Group();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const clock = new THREE.Clock(true);
+        const loader = new GLTFLoader();
+
+        const renderer = new THREE.WebGLRenderer();
+        // renderer.physicallyCorrectLights = true;
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1;
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        const composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        // composer.addPass(new SSRPass({
+        //     renderer,
+        //     scene,
+        //     camera,
+        //     width: innerWidth  / 25,
+        //     height: innerHeight / 25,
+        //     encoding: THREE.sRGBEncoding,
+        //     isPerspectiveCamera: true,
+        //     groundReflector: null,
+        //     selects: null
+        // }));
+        composer.addPass(new AdaptiveToneMappingPass());
+        composer.addPass(new UnrealBloomPass({ x: 800, y: 800 }, 0.3, 1, 0.5));
+        document.body.appendChild(renderer.domElement);
+
+        document.addEventListener('mousemove', (e) => { mousePos.x = e.clientX; mousePos.y = e.clientY }, false);
+        document.addEventListener('keydown', e => keyStates[e.code] = true);
+        document.addEventListener('keyup', e => keyStates[e.code] = false);
+        document.addEventListener('mousedown', e => mouseDown = true);
+        document.addEventListener('mouseup', e => mouseDown = false);
+        window.addEventListener('resize', e => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        let mixer;
+
+        function setup() {
+            // const targetObject = new THREE.Group();
+            // scene.add(targetObject);
+            // targetObject.position.x = 0.3;
+            // targetObject.position.z = 0.15;
+
+            player.add(camera);
+            player.position.x = 0;
+            player.position.y = playerHeight;
+            player.position.z = -1;
+            loader.load('room.glb', (gltf) => {
+                console.log(gltf);
+                scene.add(gltf.scene);
+                mixer = new THREE.AnimationMixer(gltf.scene)
+
+                const animationAction = mixer.clipAction(gltf.animations[1])
+                animationAction.play();
+                console.log("map loaded")
+
+                new RGBELoader().load('studio_small_02_1k.hdr', function (texture) {
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                    scene.environment = texture;
+                    // scene.background = texture;
+                    // scene.backgroundBlurriness  = 1;
+                    render();
+                    console.log("hdri loaded")
+                    everythingIsLoaded = true;
+                });
+            });
+        }
+
+        function update(dt) {
+            let mouseDelta = { x: mousePos.x - previousMousePos.x, y: mousePos.y - previousMousePos.y };
+            previousMousePos.x = mousePos.x;
+            previousMousePos.y = mousePos.y;
+
+            if (mouseDown) {
+                player.rotation.y += -mouseDelta.x * dt * lookSpeed;
+                camera.rotation.x += -mouseDelta.y * dt * lookSpeed;
+            }
+
+            let lookVector = new THREE.Vector3(0, 0, 0);
+            camera.getWorldDirection(lookVector);
+            lookVector = new THREE.Vector2(lookVector.x, lookVector.z);
+            lookVector.normalize();
+
+            lookVector = new THREE.Vector3(lookVector.x, 0, lookVector.y);
+
+            const movementVector = lookVector.multiplyScalar(movementSpeed * dt);
+
+            if (keyStates['KeyW']) {
+                player.position.x += movementVector.x;
+                player.position.z += movementVector.z;
+            }
+
+            if (keyStates['KeyS']) {
+                player.position.x -= movementVector.x;
+                player.position.z -= movementVector.z;
+            }
+
+            if (keyStates['KeyD']) {
+                player.position.x += -movementVector.z;
+                player.position.z += movementVector.x;
+            }
+
+            if (keyStates['KeyA']) {
+                player.position.x -= -movementVector.z;
+                player.position.z -= movementVector.x;
+            }
+        }
+
+        function render(dt) {
+            // renderer.render(scene, camera);
+            if (everythingIsLoaded)
+                mixer.update(dt)
+            composer.render(scene, camera);
+        }
+
+        function tick() {
+            requestAnimationFrame(tick);
+            const dt = clock.getDelta();
+            update(dt);
+            render(dt);
+        }
+        setup();
+        tick();
+    </script>
+</body>
+
+</html>

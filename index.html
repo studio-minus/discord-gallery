@@ -46,6 +46,8 @@
         const movementSpeed = 5;
         const playerHeight = 1.5;
         const lookSpeed = 0.2;
+        const fovs = [80, 30];
+        let lastFovTarget = fovs[0];
 
         const keyStates = {};
         let mouseDown = false;
@@ -55,7 +57,7 @@
 
         const scene = new THREE.Scene();
         const player = new THREE.Group();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(fovs[0], window.innerWidth / window.innerHeight, 0.1, 1000);
         const clock = new THREE.Clock(true);
         const loader = new GLTFLoader();
 
@@ -63,7 +65,7 @@
         // renderer.physicallyCorrectLights = true;
         renderer.toneMapping = THREE.ReinhardToneMapping;
         renderer.toneMappingExposure = 1;
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(window.innerWidth , window.innerHeight );
         const composer = new EffectComposer(renderer);
         composer.addPass(new RenderPass(scene, camera));
         // composer.addPass(new SSRPass({
@@ -78,7 +80,7 @@
         //     selects: null
         // }));
         composer.addPass(new AdaptiveToneMappingPass());
-        composer.addPass(new UnrealBloomPass({ x: 800, y: 800 }, 0.3, 1, 0.5));
+        composer.addPass(new UnrealBloomPass({ x: 256, y: 256 }, 0.3, 1, 0.5));
         document.body.appendChild(renderer.domElement);
 
         document.addEventListener('mousemove', (e) => { mousePos.x = e.clientX; mousePos.y = e.clientY }, false);
@@ -89,22 +91,16 @@
         window.addEventListener('resize', e => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(window.innerWidth , window.innerHeight );
         });
         let mixer;
 
         function setup() {
-            // const targetObject = new THREE.Group();
-            // scene.add(targetObject);
-            // targetObject.position.x = 0.3;
-            // targetObject.position.z = 0.15;
-
             player.add(camera);
             player.position.x = 0;
             player.position.y = playerHeight;
             player.position.z = -1;
             loader.load('room.glb', (gltf) => {
-                console.log(gltf);
                 scene.add(gltf.scene);
                 mixer = new THREE.AnimationMixer(gltf.scene)
 
@@ -115,8 +111,6 @@
                 new RGBELoader().load('studio_small_02_1k.hdr', function (texture) {
                     texture.mapping = THREE.EquirectangularReflectionMapping;
                     scene.environment = texture;
-                    // scene.background = texture;
-                    // scene.backgroundBlurriness  = 1;
                     render();
                     console.log("hdri loaded")
                     everythingIsLoaded = true;
@@ -162,10 +156,20 @@
                 player.position.x -= -movementVector.z;
                 player.position.z -= movementVector.x;
             }
+
+            if (keyStates['Space']) {
+                console.log(camera)
+                camera.fov = SmoothApproach(camera.fov, lastFovTarget, fovs[1], 5, dt);
+                lastFovTarget = fovs[1];
+            } else {
+                camera.fov = SmoothApproach(camera.fov, lastFovTarget, fovs[0], 15, dt);
+                lastFovTarget = fovs[0];
+            }
+
+            camera.updateProjectionMatrix();
         }
 
         function render(dt) {
-            // renderer.render(scene, camera);
             if (everythingIsLoaded)
                 mixer.update(dt)
             composer.render(scene, camera);
@@ -179,6 +183,16 @@
         }
         setup();
         tick();
+
+        function SmoothApproach(pastPosition, pastTargetPosition, targetPosition, speed, deltaTime) {
+            let t = deltaTime * speed;
+            let v = (targetPosition - pastTargetPosition) / t;
+            let f = pastPosition - pastTargetPosition + v;
+            let result = targetPosition - v + f * Math.exp(-t);
+            if (isNaN(result))
+                return pastPosition;
+            return result;
+        }
     </script>
 </body>
 

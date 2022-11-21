@@ -17,6 +17,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Playfair Display', serif;
+            background-color: black;
         }
 
         .overlay {
@@ -26,13 +27,21 @@
             text-align: center;
             z-index: 100;
             color: white;
-            font-size: 1em;
+            font-size: 1.2em;
             display: flex;
 
             flex-direction: row;
             place-content: center;
             gap: 20px;
             text-shadow: black 0 1px 3px;
+        }
+
+        .loaded {
+            display: none;
+        }
+
+        .error {
+            display: none !important;
         }
 
         .key {
@@ -43,10 +52,27 @@
 </head>
 
 <body>
-    <div class="overlay">
+    <div class="loaded overlay">
         <span><span class="key">[Hold mouse button]</span>Look around</span>
         <span><span class="key">[WASD]</span>Move</span>
         <span><span class="key">[SPACE]</span>Zoom</span>
+    </div>
+
+    <div class="loading"
+        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
+        <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
+            <span style="font-weight: bold; color: #FF0061">Studio Minus</span>
+            <span>Community Gallery</span>
+            <span style="opacity: 0.5; font-size: 0.8em">loading...</span>
+        </div>
+    </div>
+
+    <div class="error"
+        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
+        <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
+            <span style="font-weight: bold; font-size: 2em; ">ERROR</span>
+            <span style="font-size: 1.5em">Everything is broken.</span>
+        </div>
     </div>
 
     <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
@@ -79,7 +105,9 @@
         const playerHeight = 1.5;
         const lookSpeed = 0.2;
         const fovs = [80, 30];
+        const renderScale = 0.75;
         let lastFovTarget = fovs[0];
+        let loadProgress = 0;
 
         const keyStates = {};
         let mouseDown = false;
@@ -97,7 +125,9 @@
         // renderer.physicallyCorrectLights = true;
         renderer.toneMapping = THREE.ReinhardToneMapping;
         renderer.toneMappingExposure = 1;
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(window.innerWidth * renderScale, window.innerHeight * renderScale);
+        renderer.domElement.style.width = '100vw';
+        renderer.domElement.style.height = '100vh';
         const composer = new EffectComposer(renderer);
         composer.addPass(new RenderPass(scene, camera));
         // composer.addPass(new SSRPass({
@@ -132,22 +162,41 @@
             player.position.x = 0;
             player.position.y = playerHeight;
             player.position.z = -1;
-            loader.load('room.glb', (gltf) => {
-                scene.add(gltf.scene);
-                mixer = new THREE.AnimationMixer(gltf.scene)
 
-                const animationAction = mixer.clipAction(gltf.animations[1])
-                animationAction.play();
-                console.log("map loaded")
+            setTimeout(() => {
+                loader.load('room.glb', (gltf) => {
+                    scene.add(gltf.scene);
+                    mixer = new THREE.AnimationMixer(gltf.scene)
 
-                new RGBELoader().load('studio_small_02_1k.hdr', function (texture) {
-                    texture.mapping = THREE.EquirectangularReflectionMapping;
-                    scene.environment = texture;
-                    render();
-                    console.log("hdri loaded")
-                    everythingIsLoaded = true;
+                    const animationAction = mixer.clipAction(gltf.animations[1])
+                    animationAction.play();
+                    console.log("map loaded")
+
+                    new RGBELoader().load('studio_small_02_1k.hdr', (texture) => {
+                        texture.mapping = THREE.EquirectangularReflectionMapping;
+                        scene.environment = texture;
+                        render();
+                        console.log("hdri loaded")
+                        everythingIsLoaded = true;
+
+                        document.querySelectorAll('.loading').forEach(e => e.remove());
+                        document.querySelectorAll('.loaded').forEach(e => e.classList.remove('loaded'));
+                    }, p => { loadProgress = (p.loaded / p.total) }, e => {
+                        console.error(e);
+                        setErrorState(e);
+                    });
+                }, p => { loadProgress = (p.loaded / p.total) }, e => {
+                    console.error(e);
+                    setErrorState(e);
                 });
-            });
+            }, 0)
+        }
+
+        function setErrorState(e) {
+            document.querySelectorAll('.loading').forEach(e => e.remove());
+            document.querySelectorAll('.loaded').forEach(e => e.remove());
+            document.querySelectorAll('canvas').forEach(e => e.remove());
+            document.querySelectorAll('.error').forEach(e => e.classList.remove('error'));
         }
 
         function update(dt) {
@@ -157,7 +206,8 @@
 
             if (mouseDown) {
                 player.rotation.y += -mouseDelta.x * dt * lookSpeed;
-                camera.rotation.x += -mouseDelta.y * dt * lookSpeed;
+                camera.rotation.x = Math.max(-1, Math.min(1, camera.rotation.x - mouseDelta.y * dt * lookSpeed));
+                // console.log(camera.rotation.x);
             }
 
             let lookVector = new THREE.Vector3(0, 0, 0);
@@ -191,7 +241,7 @@
 
             if (keyStates['Space']) {
                 console.log(camera)
-                camera.fov = SmoothApproach(camera.fov, lastFovTarget, fovs[1], 5, dt);
+                camera.fov = SmoothApproach(camera.fov, lastFovTarget, fovs[1], 15, dt);
                 lastFovTarget = fovs[1];
             } else {
                 camera.fov = SmoothApproach(camera.fov, lastFovTarget, fovs[0], 15, dt);

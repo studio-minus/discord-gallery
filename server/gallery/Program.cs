@@ -1,9 +1,10 @@
-﻿using SixLabors.ImageSharp;
+﻿using HttpServerLite;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Text;
 using System.Text.Json;
-using WatsonWebserver;
+using HttpMethod = HttpServerLite.HttpMethod;
 
 namespace gallery;
 public class Program
@@ -35,9 +36,18 @@ public class Program
             }
         }
 
-        var server = new Server(Configuration.Current.Ip, Configuration.Current.Port, false);
+        Webserver server;
+        if (Configuration.Current.SslCert == null)
+            server = new Webserver(Configuration.Current.Ip, Configuration.Current.Port, Index);
+        else
+            server = new Webserver(Configuration.Current.Ip, Configuration.Current.Port, true, Configuration.Current.SslCert, Configuration.Current.SslCertPassword, Index);
+
+        server.Settings.Debug.Responses = true;
+        server.Settings.Debug.Routing = true;
+        server.Settings.Headers.Host = "https://" + server.Settings.Hostname + ":" + server.Settings.Port;
+
         server.Events.Logger = Console.WriteLine;
-        server.Events.ExceptionEncountered += (o, e) =>
+        server.Events.Exception += (o, e) =>
         {
             Console.Error.WriteLine("{0}: {1}", e.Url, e.Exception.Message);
         };
@@ -45,11 +55,12 @@ public class Program
         // server.Routes.Content.BaseDirectory = "www";
         server.Start();
 
+        Console.WriteLine("Listening on {0}:{1} ", server.Settings.Hostname, server.Settings.Port);
         Console.WriteLine("Press ENTER to exit");
         Console.ReadLine();
     }
 
-    [StaticRoute(WatsonWebserver.HttpMethod.GET, "/art")]
+    [StaticRoute(HttpMethod.GET, "/art")]
     public static async Task GetAllArt(HttpContext ctx)
     {
         var sb = new StringBuilder();
@@ -62,10 +73,10 @@ public class Program
                 sb.Append(", ");
         }
         sb.Append(']');
-        await ctx.Response.Send(sb.ToString());
+        await ctx.Response.SendAsync(sb.ToString());
     }
 
-    [ParameterRoute(WatsonWebserver.HttpMethod.GET, "/art/{id}/image")]
+    [ParameterRoute(HttpMethod.GET, "/art/{id}/image")]
     public static async Task GetArtImage(HttpContext ctx)
     {
         var b = Array.Empty<byte>();
@@ -80,7 +91,7 @@ public class Program
                 imgCache.Add(id, b);
             }
             ctx.Response.ContentType = "image/webp";
-            await ctx.Response.Send(b);
+            await ctx.Response.SendAsync(b);
         }
         else if (!imgCache.TryGetValue(-1, out b)) //not found, send wtf img
         {
@@ -92,15 +103,15 @@ public class Program
         }
 
         ctx.Response.ContentType = "image/webp";
-        await ctx.Response.Send(b);
+        await ctx.Response.SendAsync(b);
     }
 
-    [ParameterRoute(WatsonWebserver.HttpMethod.GET, "/art/{id}")]
+    [ParameterRoute(HttpMethod.GET, "/art/{id}")]
     public static async Task GetArt(HttpContext ctx)
     {
         if (int.TryParse(ctx.Request.Url.Parameters["id"], out var id) && artworks.TryGetValue(id, out var artwork))
         {
-            await ctx.Response.Send(JsonSerializer.Serialize(new
+            await ctx.Response.SendAsync(JsonSerializer.Serialize(new
             {
                 artwork.Name,
                 artwork.Author,
@@ -111,13 +122,13 @@ public class Program
         }
 
         ctx.Response.StatusCode = 404;
-        await ctx.Response.Send("Artwork not found");
+        await ctx.Response.SendAsync("Artwork not found");
     }
 
-    [StaticRoute(WatsonWebserver.HttpMethod.GET, "/")]
+    [StaticRoute(HttpMethod.GET, "/")]
     public static async Task Index(HttpContext ctx)
     {
         ctx.Response.ContentType = "text/html";
-        await ctx.Response.Send(File.ReadAllBytes("www/index.html"));
+        await ctx.Response.SendAsync(File.ReadAllBytes("www/index.html"));
     }
 }

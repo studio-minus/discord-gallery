@@ -7,6 +7,8 @@ public class Configuration
     public string ArtPath { get; set; } = "art";
     public string Ip { get; set; } = "127.0.0.1";
     public int Port { get; set; } = 8080;
+    public string? SslCert { get; set; } = null;
+    public string? SslCertPassword { get; set; } = null;
 
     public static Configuration Current = new();
 
@@ -15,7 +17,7 @@ public class Configuration
         if (!File.Exists(path))
         {
             Console.Error.WriteLine("Config file \"{0}\" does not exist", path);
-            return; 
+            return;
         }
 
         var loaded = JsonSerializer.Deserialize<Configuration>(File.ReadAllText(path));

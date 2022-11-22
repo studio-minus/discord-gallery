@@ -120,12 +120,13 @@
         const player = new THREE.Group();
         const camera = new THREE.PerspectiveCamera(fovs[0], window.innerWidth / window.innerHeight, 0.1, 1000);
         const clock = new THREE.Clock(true);
-        const loader = new GLTFLoader();
+        const meshLoader = new GLTFLoader();
+        const textureLoader = new THREE.TextureLoader();
 
         const renderer = new THREE.WebGLRenderer();
-        // renderer.physicallyCorrectLights = true;
+        renderer.physicallyCorrectLights = true;
         renderer.toneMapping = THREE.ReinhardToneMapping;
-        renderer.toneMappingExposure = 1;
+        renderer.toneMappingExposure = 2;
         renderer.setSize(window.innerWidth * renderScale, window.innerHeight * renderScale);
         renderer.domElement.style.width = '100vw';
         renderer.domElement.style.height = '100vh';
@@ -142,9 +143,14 @@
         //     groundReflector: null,
         //     selects: null
         // }));
-        composer.addPass(new AdaptiveToneMappingPass());
-        composer.addPass(new UnrealBloomPass({ x: 256, y: 256 }, 0.3, 1, 0.5));
+        const adaptiveTonemapping = new AdaptiveToneMappingPass(true);
+        composer.addPass(adaptiveTonemapping);
+        composer.addPass(new UnrealBloomPass({ x: 256, y: 256 }, 0.3, 1, 0.9));
+        // composer.addPass(new BrightnessContrastEffect({ brightness: 3 }));
         document.body.appendChild(renderer.domElement);
+
+        adaptiveTonemapping.setAdaptionRate(0.001);
+        adaptiveTonemapping.setMinLuminance(0.0005);
 
         document.addEventListener('mousemove', (e) => { mousePos.x = e.clientX; mousePos.y = e.clientY }, false);
         document.addEventListener('keydown', e => keyStates[e.code] = true);
@@ -162,20 +168,53 @@
             player.add(camera);
             player.position.x = 0;
             player.position.y = playerHeight;
-            player.position.z = -1;
+            player.position.z = 24;
 
             setTimeout(() => {
-                loader.load('room.glb', (gltf) => {
-                    scene.add(gltf.scene);
-                    mixer = new THREE.AnimationMixer(gltf.scene)
+                meshLoader.load('TentScene.glb', (gltf) => {
+                    textureLoader.load('booms.png', booms => {
+                        const mat = gltf.scene.children[5].material;
+                        booms.wrapS = THREE.RepeatWrapping;
+                        booms.wrapT = THREE.RepeatWrapping;
+                        mat.alphaTest = 0.5;
+                        mat.alphaMap = booms;
+                        mat.transparent = true;
+                        mat.texture = booms;
+                        mat.needsUpdate = true;
+                    });
 
-                    const animationAction = mixer.clipAction(gltf.animations[1])
-                    animationAction.play();
+                    gltf.scene.children[9].children[1].material.emissiveIntensity = 5;
+                    gltf.scene.children[9].children[1].material.emissive = new THREE.Color(30.2,30.2,30.2,1);
+                    gltf.scene.children[9].children[1].material.needsUpdate = true;
+
+                    getArtworkIds().then(async d => {
+                        console.log("art found: ", d);
+                        const meshes = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a,b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
+                        console.log(meshes)
+                        let index = 0;
+                        for (const id of d) {
+                            let art = await getArtwork(id);
+                            let img = await getArtworkImage(art);
+
+                            meshes[index].material.emissive = new THREE.Color(0.2,0.2,0.2,1);
+                            meshes[index].material.emissiveMap = img;
+                            meshes[index].material.map = img;
+                            meshes[index].material.needsUpdate = true;
+
+                            console.log(img);
+                            index++;
+                        }
+                    });
+
+                    scene.add(gltf.scene);
                     console.log("map loaded")
 
-                    new RGBELoader().load('studio_small_02_1k.hdr', (texture) => {
+                    console.log(gltf);
+
+                    new RGBELoader().load('enight-small-bright.hdr', (texture) => {
                         texture.mapping = THREE.EquirectangularReflectionMapping;
                         scene.environment = texture;
+                        scene.background = texture;
                         render();
                         console.log("hdri loaded")
                         everythingIsLoaded = true;
@@ -200,6 +239,20 @@
             document.querySelectorAll('.error').forEach(e => e.classList.remove('error'));
         }
 
+        async function getArtworkIds() {
+            let response = await (await fetch('/art')).json();
+            return response;
+        }
+
+        async function getArtwork(id) {
+            let artMeta = await (await fetch(`/art/${id}`)).json();
+            return artMeta;
+        }
+
+        async function getArtworkImage(artwork) {
+            return textureLoader.load('/' + artwork.Src);
+        }
+
         function update(dt) {
             let mouseDelta = { x: mousePos.x - previousMousePos.x, y: mousePos.y - previousMousePos.y };
             previousMousePos.x = mousePos.x;
@@ -208,7 +261,6 @@
             if (mouseDown) {
                 player.rotation.y += -mouseDelta.x * dt * lookSpeed;
                 camera.rotation.x = Math.max(-1, Math.min(1, camera.rotation.x - mouseDelta.y * dt * lookSpeed));
-                // console.log(camera.rotation.x);
             }
 
             let lookVector = new THREE.Vector3(0, 0, 0);
@@ -241,7 +293,6 @@
             }
 
             if (keyStates['Space']) {
-                console.log(camera)
                 camera.fov = SmoothApproach(camera.fov, lastFovTarget, fovs[1], 15, dt);
                 lastFovTarget = fovs[1];
             } else {
@@ -253,8 +304,8 @@
         }
 
         function render(dt) {
-            if (everythingIsLoaded)
-                mixer.update(dt)
+            // if (everythingIsLoaded)
+            //     mixer.update(dt)
             composer.render(scene, camera);
         }
 

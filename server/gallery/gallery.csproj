@@ -18,16 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="O:\Projects\discord-gallery\server\gallery\error.png">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Update="art\2.json">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	  <None Update="art\1.json">
+	  <None Update="error.png">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>

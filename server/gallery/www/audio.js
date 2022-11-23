@@ -3,6 +3,8 @@ let listener;
 
 let outdoorLowpassNode;
 let outdoorGainNode;
+let crowdSource;
+let crowdGainNode;
 
 const audioBufferCache = {};
 const sounds = {
@@ -14,7 +16,8 @@ const sounds = {
         "sfx/bear-05.wav",
         "sfx/bear-06.wav",
     ],
-    outdoorAmbience: "sfx/outdoors.ogg"
+    outdoorAmbience: "sfx/outdoors.ogg",
+    peopleTalking: "sfx/people-talking.ogg",
 };
 
 async function initaliseAudio() {
@@ -24,7 +27,7 @@ async function initaliseAudio() {
     outdoorLowpassNode = new BiquadFilterNode(audioCtx);
     outdoorLowpassNode.type = 'lowpass';
     outdoorLowpassNode.frequency.value = 1500;
-    
+
     outdoorGainNode = new GainNode(audioCtx);
     outdoorGainNode.gain.value = 0.5;
     outdoorLowpassNode.connect(outdoorGainNode).connect(audioCtx.destination)
@@ -32,9 +35,13 @@ async function initaliseAudio() {
     let outdoorSound = await createAmbientSpeaker('sfx/outdoors.ogg');
     outdoorSound.start();
 
-    const clowntje = await createPointSpeaker('c.mp3', 0, 0, 0);
+    const clowntje = await createPointSpeaker('c.mp3', 0, 10, -14, 5, 40);
     clowntje.loop = true;
     clowntje.start();
+
+    const lamp = await createPointSpeaker('sfx/lamp.wav', 0, 9, 0, 2, 30);
+    lamp.loop = true;
+    lamp.start();
 }
 
 async function loadAudio(path) {
@@ -47,9 +54,17 @@ async function loadAudio(path) {
     return buffer;
 }
 
-async function createPointSpeaker(audioPath, x, y, z, rolloffFactor = 2, maxDistance = 100) {
+async function createPointSpeaker(audioPath, x, y, z, rolloffFactor = 2, maxDistance = 100, autoConnect = true) {
     const source = audioCtx.createBufferSource();
     source.buffer = await loadAudio(audioPath);
+    const panner = setAudioPosition(source, x, y, z, rolloffFactor, maxDistance);
+    if (autoConnect)
+        panner.connect(audioCtx.destination);
+
+    return source;
+}
+
+function setAudioPosition(source, x, y, z, rolloffFactor = 2, maxDistance = 100) {
     const panner = new PannerNode(audioCtx, {
         panningModel: 'HRTF',
         distanceModel: 'inverse',
@@ -60,8 +75,8 @@ async function createPointSpeaker(audioPath, x, y, z, rolloffFactor = 2, maxDist
         maxDistance,
         rolloffFactor,
     })
-    source.connect(panner).connect(audioCtx.destination);
-    return source;
+    source.connect(panner);
+    return panner;
 }
 
 async function createAmbientSpeaker(audioPath) {

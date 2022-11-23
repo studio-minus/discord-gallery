@@ -1,7 +1,10 @@
 ﻿using HttpServerLite;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Text;
 using System.Text.Json;
 using HttpMethod = HttpServerLite.HttpMethod;
@@ -9,15 +12,16 @@ using HttpMethod = HttpServerLite.HttpMethod;
 namespace gallery;
 public class Program
 {
-    private static Dictionary<int, Artwork> artworks = new();
-    private static readonly Dictionary<int, byte[]> imgCache = new();
+    private static ReadOnlyDictionary<int, Artwork> artworks;
+    private static readonly ConcurrentDictionary<int, byte[]> imgCache = new();
 
     public static async Task Main(string[] args)
     {
         Configuration.Load("config.json");
-
         var path = Path.GetFullPath(Configuration.Current.ArtPath);
         var dir = new DirectoryInfo(path);
+
+        var art = new Dictionary<int, Artwork>();
         foreach (var item in dir.EnumerateFiles("*.json"))
         {
             Console.WriteLine("Art found: {0}", Path.GetFileNameWithoutExtension(item.Name));
@@ -27,7 +31,7 @@ public class Program
                 if (artwork != null)
                 {
                     await artwork.Initialise();
-                    artworks.Add(artworks.Count, artwork);
+                    art.Add(art.Count, artwork);
                 }
             }
             catch (Exception e)
@@ -35,6 +39,8 @@ public class Program
                 Console.Error.WriteLine("Failed to read artwork {0}: {1}", item.Name, e);
             }
         }
+
+        artworks = new ReadOnlyDictionary<int, Artwork>(art);
 
         Webserver server;
         if (Configuration.Current.SslCert == null)
@@ -88,7 +94,8 @@ public class Program
                 using var m = new MemoryStream();
                 artwork.Img.Save(m, new WebpEncoder() { Quality = 80 });
                 b = m.ToArray();
-                imgCache.Add(id, b);
+                if (!imgCache.TryAdd(id, b))
+                    Console.Error.WriteLine("Failed to cache artwork {0}", id);
             }
             ctx.Response.ContentType = "image/webp";
             await ctx.Response.SendAsync(b);
@@ -99,7 +106,8 @@ public class Program
             var img = Image.Load<Rgb24>("error.png");
             img.Save(m, new WebpEncoder() { Quality = 80 });
             b = m.ToArray();
-            imgCache.Add(-1, b);
+            if (!imgCache.TryAdd(-1, b))
+                Console.Error.WriteLine("Failed to cache artwork {0}", id);
         }
 
         ctx.Response.ContentType = "image/webp";

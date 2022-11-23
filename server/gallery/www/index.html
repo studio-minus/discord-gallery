@@ -205,9 +205,15 @@
 
                     const ezels = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a, b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
                     for (let i = 0; i < 5; i++) {
-                        let img = await textureLoader.load(`/art/${i}/image`);
+                        console.log(ezels[i])
+                        const w = Math.ceil(ezels[i].scale.x * 1024);
+                        const h = Math.ceil(ezels[i].scale.z * 1024);
+                        console.log(`/art/${i}/image/${w}/${h}`)
+                        let img = await textureLoader.load(`/art/${i}/image/${w}/${h}`);
                         img.flipY = false;
                         let mat = ezels[i].material;
+                        mat.alphaTest = 0.5;
+                        mat.transparent = false;
                         mat.color = new THREE.Color(0.9, 0.9, 0.9, 1);
                         mat.map = img;
                         mat.needsUpdate = true;

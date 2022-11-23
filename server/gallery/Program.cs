@@ -30,10 +30,7 @@ public class Program
             {
                 var artwork = JsonSerializer.Deserialize<Artwork>(File.ReadAllText(item.FullName));
                 if (artwork != null)
-                {
-                    await artwork.Initialise();
                     found.Add(artwork);
-                }
             }
             catch (Exception e)
             {
@@ -85,19 +82,25 @@ public class Program
         await ctx.Response.SendAsync(sb.ToString());
     }
 
-    [ParameterRoute(HttpMethod.GET, "/art/{id}/image")]
+    [ParameterRoute(HttpMethod.GET, "/art/{id}/image/{w}/{h}")]
     public static async Task GetArtImage(HttpContext ctx)
     {
         var b = Array.Empty<byte>();
+        int w = int.Parse(ctx.Request.Url.Parameters["w"]);
+        int h = int.Parse(ctx.Request.Url.Parameters["h"]);
+
+        w = Math.Min(1024, Math.Max(128, w));
+        h = Math.Min(1024, Math.Max(128, h));
 
         if (int.TryParse(ctx.Request.Url.Parameters["id"], out var id) && artworks.TryGetValue(id, out var artwork))
         {
-            if (!imgCache.TryGetValue(id, out b))
+            if (!imgCache.TryGetValue(HashCode.Combine(id, w, h), out b))
             {
+                var img = await ArtCache.Load(w, h, artwork);
                 using var m = new MemoryStream();
-                artwork.Img.Save(m, new WebpEncoder() { Quality = 80 });
+                img.Save(m, new WebpEncoder() { Quality = 95 });
                 b = m.ToArray();
-                if (!imgCache.TryAdd(id, b))
+                if (!imgCache.TryAdd(HashCode.Combine(id, w, h), b))
                     Console.Error.WriteLine("Failed to cache artwork {0}", id);
             }
             ctx.Response.ContentType = "image/webp";
@@ -106,8 +109,8 @@ public class Program
         else if (!imgCache.TryGetValue(-1, out b)) //not found, send wtf img
         {
             using var m = new MemoryStream();
-            var img = Image.Load<Rgb24>("error.png");
-            img.Save(m, new WebpEncoder() { Quality = 80 });
+            var img = Image.Load<Rgba32>("error.png");
+            img.Save(m, new WebpEncoder() { Quality = 100 });
             b = m.ToArray();
             if (!imgCache.TryAdd(-1, b))
                 Console.Error.WriteLine("Failed to cache artwork {0}", id);
@@ -128,7 +131,7 @@ public class Program
                 artwork.Author,
                 artwork.Description,
                 artwork.Interactions,
-                Src = $"art/{id}/image"
+                Src = $"art/{id}/image/512/512"
             }));
         }
 

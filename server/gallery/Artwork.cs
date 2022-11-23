@@ -9,7 +9,7 @@ namespace gallery;
 public static class ArtRenderer
 {
     public const int FinalSize = 1024;
-    public const int MaxInnerArtSize = 1000;
+    public const int MaxInnerArtSize = FinalSize - 15;
     public static (int x, int y) MinRectSize = (200, 100);
 
     private static readonly FontCollection fonts = new FontCollection();
@@ -24,7 +24,7 @@ public static class ArtRenderer
         descriptionFont = vollkorn.CreateFont(32, FontStyle.Italic);
     }
 
-    public static Image<Rgb24> RenderArtwork(string title, string author, Image<Rgb24> piece)
+    public static Image<Rgb24> RenderArtwork(string title, string author, int score, Image<Rgb24> piece)
     {
         piece.Mutate((i) =>
         {
@@ -65,6 +65,13 @@ public static class ArtRenderer
                 WrappingLength = rectSize.x,
                 Origin = new PointF((rect.Left + rect.Right) / 2, rect.Bottom + 5)
             }, author, Color.Black.WithAlpha(0.2f));
+
+            i.DrawText(new TextOptions(descriptionFont)
+            {
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Origin = new PointF(0, FinalSize),
+            }, $"€{score}", Color.DarkGreen);
         });
 
         return img;
@@ -100,7 +107,7 @@ public class Artwork
 
         using var piece = Image.Load<Rgb24>(bytes);
 
-        Img = ArtRenderer.RenderArtwork(Name, Author, piece);
+        Img = ArtRenderer.RenderArtwork(Name ?? "Untitled", Author ?? "Unknown", Interactions, piece);
         Width = Img.Width;
         Height = Img.Height;
 

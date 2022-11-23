@@ -21,6 +21,7 @@ public class Program
         var path = Path.GetFullPath(Configuration.Current.ArtPath);
         var dir = new DirectoryInfo(path);
 
+        var found = new List<Artwork>();
         var art = new Dictionary<int, Artwork>();
         foreach (var item in dir.EnumerateFiles("*.json"))
         {
@@ -31,7 +32,7 @@ public class Program
                 if (artwork != null)
                 {
                     await artwork.Initialise();
-                    art.Add(art.Count, artwork);
+                    found.Add(artwork);
                 }
             }
             catch (Exception e)
@@ -40,6 +41,8 @@ public class Program
             }
         }
 
+        foreach (var item in found.OrderBy(static a => a.Interactions))
+            art.Add(art.Count, item);
         artworks = new ReadOnlyDictionary<int, Artwork>(art);
 
         Webserver server;

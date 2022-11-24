@@ -5,6 +5,7 @@ using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using HttpMethod = HttpServerLite.HttpMethod;
@@ -12,7 +13,7 @@ using HttpMethod = HttpServerLite.HttpMethod;
 namespace gallery;
 public class Program
 {
-    private static ReadOnlyDictionary<int, Artwork> artworks;
+    private static readonly ConcurrentDictionary<int, Artwork> artworks = new();
     private static readonly ConcurrentDictionary<int, byte[]> imgCache = new();
 
     public static async Task Main(string[] args)
@@ -22,7 +23,6 @@ public class Program
         var dir = new DirectoryInfo(path);
 
         var found = new List<Artwork>();
-        var art = new Dictionary<int, Artwork>();
         foreach (var item in dir.EnumerateFiles("*.json"))
         {
             Console.WriteLine("Art found: {0}", Path.GetFileNameWithoutExtension(item.Name));
@@ -38,9 +38,9 @@ public class Program
             }
         }
 
+        int i = 0;
         foreach (var item in found.OrderBy(static a => a.Interactions))
-            art.Add(art.Count, item);
-        artworks = new ReadOnlyDictionary<int, Artwork>(art);
+            artworks.TryAdd(i++, item);
 
         Webserver server;
         if (Configuration.Current.SslCert == null)
@@ -139,10 +139,39 @@ public class Program
         await ctx.Response.SendAsync("Artwork not found");
     }
 
+    [ParameterRoute(HttpMethod.POST, "/art")]
+    public static async Task UploadArt(HttpContext ctx)
+    {
+        var body = ctx.Request.DataAsJsonObject<UploadArwork>();
+        artworks.AddOrUpdate()
+        if (int.TryParse(ctx.Request.Url.Parameters["id"], out var id) && artworks.TryGetValue(id, out var artwork))
+        {
+            await ctx.Response.SendAsync(JsonSerializer.Serialize(new
+            {
+                artwork.Name,
+                artwork.Author,
+                artwork.Description,
+                artwork.Interactions,
+                Src = $"art/{id}/image/512/512"
+            }));
+        }
+
+        ctx.Response.StatusCode = 404;
+        await ctx.Response.SendAsync("Artwork not found");
+    }
+
     [StaticRoute(HttpMethod.GET, "/")]
     public static async Task Index(HttpContext ctx)
     {
         ctx.Response.ContentType = "text/html";
         await ctx.Response.SendAsync(File.ReadAllBytes("www/index.html"));
+    }
+
+    public class UploadArwork
+    {
+        public string Title = "Untitled";
+        public string Author = "Unknown"; 
+        public string Image = "https://i.imgur.com/ivtJ4zT_d.webp";
+        public int Interactions = 0;
     }
 }

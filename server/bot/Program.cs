@@ -4,8 +4,6 @@ using Newtonsoft.Json.Linq;
 using System.Net.Mime;
 using System.Collections.Concurrent;
 using System.Xml.Linq;
-using Ceras;
-using System.Collections;
 
 namespace bot;
 
@@ -151,109 +149,6 @@ public class Curator
 
     public async Task DeleteMessage(Cacheable<IMessage, ulong> arg)
     {
-
-    }
-}
-
-public class ArtworkReference
-{
-    public readonly ulong MessageId;
-
-    public string Author;
-    public string Url;
-    public string? Title;
-
-    public ArtworkReference()
-    {
-        MessageId = 0;
-        Author = string.Empty;
-        Url = string.Empty;
-    }
-
-    public ArtworkReference(ulong messageId, string author, string url)
-    {
-        MessageId = messageId;
-        Author = author;
-        Url = url;
-    }
-}
-
-public class PersistentCollection<T> : IDisposable, IEnumerable<T>
-{
-    public readonly FileInfo Source;
-
-    private List<T> coll = new();
-    private readonly CerasSerializer ceras = new();
-    private readonly Mutex mut = new();
-
-    public PersistentCollection(string path)
-    {
-        Source = new FileInfo(Path.GetFullPath(path));
-        LoadFromSource();
-    }
-
-    private void LoadFromSource()
-    {
-        if (File.Exists(Source.FullName))
-            ceras.Deserialize(ref coll, File.ReadAllBytes(Source.FullName));
-    }
-
-    private void SaveToSource()
-    {
-        File.WriteAllBytes(Source.FullName, ceras.Serialize(coll));
-    }
-
-    public void Add(T t)
-    {
-        mut.WaitOne();
-
-        try
-        {
-            coll.Add(t);
-            SaveToSource();
-        }
-        catch (Exception)
-        {
-            throw;
-        }
-        finally
-        {
-            mut.ReleaseMutex();
-        }
-    }
-
-    public bool Remove(T t)
-    {
-        mut.WaitOne();
-        try
-        {
-            var b = coll.Remove(t);
-            if (b)
-                SaveToSource();
-            return b;
-        }
-        catch (Exception)
-        {
-            throw;
-        }
-        finally
-        {
-            mut.ReleaseMutex();
-        }
-    }
-
-    public void Dispose()
-    {
-        mut.Dispose();
-    }
-
-    public IEnumerator<T> GetEnumerator()
-    {
-        return coll.GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        throw new NotImplementedException();
+        art.Remove(m => m.MessageId == arg.Id);
     }
 }

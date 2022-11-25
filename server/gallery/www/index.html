@@ -32,7 +32,6 @@
             color: white;
             font-size: 1.2em;
             display: flex;
-
             flex-direction: row;
             place-content: center;
             gap: 20px;
@@ -62,7 +61,7 @@
     </div>
 
     <div class="loading"
-        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
+         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
             <span style="font-weight: bold; color: #FF0061">Studio Minus</span>
             <span>Community Gallery</span>
@@ -71,7 +70,7 @@
     </div>
 
     <div class="error"
-        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
+         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
             <span style="font-weight: bold; font-size: 2em; ">ERROR</span>
             <span style="font-size: 1.5em">Everything is broken.</span>
@@ -189,35 +188,45 @@
                         mat.needsUpdate = true;
                     });
 
-                    // getArtworkIds().then(async d => {
-                    //     console.log("art found: ", d);
-                    //     const meshes = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a, b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
-                    //     let index = 0;
-                    //     for (const id of d) {
-                    //         let art = await getArtwork(id);
-                    //         let img = await getArtworkImage(art);
-                    //         meshes[index].material.color = new THREE.Color(0.9, 0.9, 0.9, 1);
-                    //         meshes[index].material.map = img;
-                    //         meshes[index].material.needsUpdate = true;
-                    //         index++;
-                    //     }
-                    // });
+                    getArtworkIds().then(async d => {
+                        console.log("art found: ", d);
+                        const ezels = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a, b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
+                        let i = 0;
+                        for (const id of d) {
+                            console.log(ezels[i])
+                            const w = Math.ceil(ezels[i].scale.x * 1024);
+                            const h = Math.ceil(ezels[i].scale.z * 1024);
+                            console.log(`/art/${id}/image/${w}/${h}`)
+                            let img = await textureLoader.load(`/art/${id}/image/${w}/${h}`);
+                            img.encoding = THREE.sRGBEncoding;
+                            img.flipY = false;
+                            let mat = ezels[i].material;
+                            mat.alphaTest = 0.5;
+                            mat.transparent = false;
+                            mat.color = new THREE.Color(0.9, 0.9, 0.9, 1);
+                            mat.map = img;
+                            mat.needsUpdate = true;
+                            i++;
+                            if (i >= ezels.length)
+                                break;
+                        }
+                    });
 
-                    const ezels = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a, b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
-                    for (let i = 0; i < 5; i++) {
-                        console.log(ezels[i])
-                        const w = Math.ceil(ezels[i].scale.x * 1024);
-                        const h = Math.ceil(ezels[i].scale.z * 1024);
-                        console.log(`/art/${i}/image/${w}/${h}`)
-                        let img = await textureLoader.load(`/art/${i}/image/${w}/${h}`);
-                        img.flipY = false;
-                        let mat = ezels[i].material;
-                        mat.alphaTest = 0.5;
-                        mat.transparent = false;
-                        mat.color = new THREE.Color(0.9, 0.9, 0.9, 1);
-                        mat.map = img;
-                        mat.needsUpdate = true;
-                    }
+                    //const ezels = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a, b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
+                    //for (let i = 0; i < 5; i++) {
+                    //    console.log(ezels[i])
+                    //    const w = Math.ceil(ezels[i].scale.x * 1024);
+                    //    const h = Math.ceil(ezels[i].scale.z * 1024);
+                    //    console.log(`/art/${i}/image/${w}/${h}`)
+                    //    let img = await textureLoader.load(`/art/${i}/image/${w}/${h}`);
+                    //    img.flipY = false;
+                    //    let mat = ezels[i].material;
+                    //    mat.alphaTest = 0.5;
+                    //    mat.transparent = false;
+                    //    mat.color = new THREE.Color(0.9, 0.9, 0.9, 1);
+                    //    mat.map = img;
+                    //    mat.needsUpdate = true;
+                    //}
 
                     scene.add(gltf.scene);
                     console.log("map loaded")

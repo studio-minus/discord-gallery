@@ -13,8 +13,8 @@ using HttpMethod = HttpServerLite.HttpMethod;
 namespace gallery;
 public class Program
 {
-    private static readonly ConcurrentDictionary<int, Artwork> artworks = new();
-    private static readonly ConcurrentDictionary<int, byte[]> imgCache = new();
+    private static readonly ConcurrentDictionary<string, Artwork> artworks = new();
+    private static readonly ConcurrentDictionary<(string, int, int), byte[]> imgCache = new();
 
     public static async Task Main(string[] args)
     {
@@ -38,9 +38,8 @@ public class Program
             }
         }
 
-        int i = 0;
         foreach (var item in found.OrderBy(static a => a.Interactions))
-            artworks.TryAdd(i++, item);
+            artworks.TryAdd(shortid.ShortId.Generate(), item);
 
         Webserver server;
         if (Configuration.Current.SslCert == null)
@@ -72,7 +71,7 @@ public class Program
         var sb = new StringBuilder();
         sb.Append('[');
         int c = 0;
-        foreach (var item in artworks)
+        foreach (var item in artworks.OrderBy(static d => d.Value.Interactions))
         {
             sb.AppendFormat("\"{0}\"", item.Key);
             if (++c != artworks.Count)
@@ -85,34 +84,35 @@ public class Program
     [ParameterRoute(HttpMethod.GET, "/art/{id}/image/{w}/{h}")]
     public static async Task GetArtImage(HttpContext ctx)
     {
-        var b = Array.Empty<byte>();
+        var id = ctx.Request.Url.Parameters["id"];
         int w = int.Parse(ctx.Request.Url.Parameters["w"]);
         int h = int.Parse(ctx.Request.Url.Parameters["h"]);
 
         w = Math.Min(1024, Math.Max(128, w));
         h = Math.Min(1024, Math.Max(128, h));
 
-        if (int.TryParse(ctx.Request.Url.Parameters["id"], out var id) && artworks.TryGetValue(id, out var artwork))
+        byte[]? b;
+        if (artworks.TryGetValue(id, out var artwork))
         {
-            if (!imgCache.TryGetValue(HashCode.Combine(id, w, h), out b))
+            if (!imgCache.TryGetValue((id, w, h), out b))
             {
                 var img = await ArtCache.Load(w, h, artwork);
                 using var m = new MemoryStream();
                 img.Save(m, new WebpEncoder() { Quality = 95 });
                 b = m.ToArray();
-                if (!imgCache.TryAdd(HashCode.Combine(id, w, h), b))
+                if (!imgCache.TryAdd((id, w, h), b))
                     Console.Error.WriteLine("Failed to cache artwork {0}", id);
             }
             ctx.Response.ContentType = "image/webp";
             await ctx.Response.SendAsync(b);
         }
-        else if (!imgCache.TryGetValue(-1, out b)) //not found, send wtf img
+        else if (!imgCache.TryGetValue(default, out b)) //not found, send wtf img
         {
             using var m = new MemoryStream();
             var img = Image.Load<Rgba32>("error.png");
             img.Save(m, new WebpEncoder() { Quality = 100 });
             b = m.ToArray();
-            if (!imgCache.TryAdd(-1, b))
+            if (!imgCache.TryAdd(default, b))
                 Console.Error.WriteLine("Failed to cache artwork {0}", id);
         }
 
@@ -123,7 +123,8 @@ public class Program
     [ParameterRoute(HttpMethod.GET, "/art/{id}")]
     public static async Task GetArt(HttpContext ctx)
     {
-        if (int.TryParse(ctx.Request.Url.Parameters["id"], out var id) && artworks.TryGetValue(id, out var artwork))
+        var id = ctx.Request.Url.Parameters["id"];
+        if (artworks.TryGetValue(id, out var artwork))
         {
             await ctx.Response.SendAsync(JsonSerializer.Serialize(new
             {
@@ -142,22 +143,26 @@ public class Program
     [ParameterRoute(HttpMethod.POST, "/art")]
     public static async Task UploadArt(HttpContext ctx)
     {
-        var body = ctx.Request.DataAsJsonObject<UploadArwork>();
-        artworks.AddOrUpdate()
-        if (int.TryParse(ctx.Request.Url.Parameters["id"], out var id) && artworks.TryGetValue(id, out var artwork))
+        var b = new byte[1024];
+        int count = ctx.Request.Data.Read(b);
+        var body = JsonSerializer.Deserialize<UploadArwork>(Encoding.UTF8.GetString(b.AsSpan(0, count)));
+        var id = shortid.ShortId.Generate();
+        var art = new Artwork()
         {
-            await ctx.Response.SendAsync(JsonSerializer.Serialize(new
-            {
-                artwork.Name,
-                artwork.Author,
-                artwork.Description,
-                artwork.Interactions,
-                Src = $"art/{id}/image/512/512"
-            }));
+            Author = body.Author,
+            Name = body.Name,
+            Interactions = body.Interactions,
+            ImageData = body.ImageData
+        };
+        bool success = artworks.TryAdd(id, art);
+
+        if (success)
+        {
+            File.WriteAllText(Configuration.Current.ArtPath + "/" + id + ".json", JsonSerializer.Serialize(art));
         }
 
-        ctx.Response.StatusCode = 404;
-        await ctx.Response.SendAsync("Artwork not found");
+        ctx.Response.StatusCode = success ? 200 : 500;
+        await ctx.Response.SendAsync(success ? id : "Failed to add artwork to dictionary");
     }
 
     [StaticRoute(HttpMethod.GET, "/")]
@@ -169,9 +174,9 @@ public class Program
 
     public class UploadArwork
     {
-        public string Title = "Untitled";
-        public string Author = "Unknown"; 
-        public string Image = "https://i.imgur.com/ivtJ4zT_d.webp";
-        public int Interactions = 0;
+        public string Name { get; set; } = "Untitled";
+        public string Author { get; set; } = "Unknown";
+        public string ImageData { get; set; } = "https://i.imgur.com/ivtJ4zT_d.webp";
+        public int Interactions { get; set; } = 0;
     }
 }

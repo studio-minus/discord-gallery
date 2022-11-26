@@ -5,6 +5,7 @@ using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -15,6 +16,7 @@ public class Program
 {
     private static readonly ConcurrentDictionary<string, Artwork> artworks = new();
     private static readonly ConcurrentDictionary<(string, int, int), byte[]> imgCache = new();
+    private const string apiSecret = "D3BE5284-B918-4279-8EE7-77FFA1E4566F";
 
     public static async Task Main(string[] args)
     {
@@ -140,12 +142,20 @@ public class Program
         await ctx.Response.SendAsync("Artwork not found");
     }
 
-    [ParameterRoute(HttpMethod.POST, "/art")]
+    [StaticRoute(HttpMethod.POST, "/art")]
     public static async Task UploadArt(HttpContext ctx)
     {
-        var b = new byte[1024];
-        int count = ctx.Request.Data.Read(b);
-        var body = JsonSerializer.Deserialize<UploadArwork>(Encoding.UTF8.GetString(b.AsSpan(0, count)));
+        if (!ctx.Request.Data.CanRead || ctx.Request.ContentLength == 0)
+            throw new Exception("empty body");
+        var b = new byte[2048];
+        int count = await ctx.Request.Data.ReadAsync(b);
+        var body = JsonSerializer.Deserialize<UploadArtwork>(Encoding.UTF8.GetString(b.AsSpan(0, count)));
+        if (body == null || body.Secret != apiSecret)
+        {
+            ctx.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            ctx.Response.Headers.Add("WWW-Authenticate", "The given object needs to have a valid Secret field");
+            await ctx.Response.SendAsync("Invalid secret");
+        }
         var id = shortid.ShortId.Generate();
         var art = new Artwork()
         {
@@ -172,8 +182,9 @@ public class Program
         await ctx.Response.SendAsync(File.ReadAllBytes("www/index.html"));
     }
 
-    public class UploadArwork
+    public class UploadArtwork
     {
+        public string Secret { get; set; } = "invalid";
         public string Name { get; set; } = "Untitled";
         public string Author { get; set; } = "Unknown";
         public string ImageData { get; set; } = "https://i.imgur.com/ivtJ4zT_d.webp";

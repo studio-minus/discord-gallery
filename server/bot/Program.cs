@@ -18,6 +18,8 @@ public class Program
 
 public readonly struct Paths
 {
+    public const string ApiSecret = "invalid";
+    public const string Endpoint = "http://127.0.0.1/art";
     public const string TokenFilePath = "token.txt";
     public const string ChannelFilePath = "channel.txt";
     public const string GuildFilePath = "guild.txt";
@@ -145,6 +147,11 @@ public class Curator
                 });
             }
         }
+    }
+
+    public void UploadToGallery()
+    {
+        //TODO remove existing artwork, upload new artwork (moet dit met API? kun je de applicaties niet samenvoegen zodat je gewoon van een directory kunt lezen? is echt veel makkelijker en veiliger :)"
     }
 
     public async Task DeleteMessage(Cacheable<IMessage, ulong> arg)

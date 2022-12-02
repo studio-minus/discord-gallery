@@ -1,12 +1,9 @@
 ﻿using HttpServerLite;
-using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using HttpMethod = HttpServerLite.HttpMethod;
@@ -18,7 +15,7 @@ public class Program
     private static readonly ConcurrentDictionary<(string, int, int), byte[]> imgCache = new();
     private const string apiSecret = "D3BE5284-B918-4279-8EE7-77FFA1E4566F";
 
-    public static async Task Main(string[] args)
+    public static void Main(string[] args)
     {
         Configuration.Load("config.json");
         var path = Path.GetFullPath(Configuration.Current.ArtPath);

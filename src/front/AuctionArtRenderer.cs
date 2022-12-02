@@ -4,27 +4,27 @@ using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Drawing.Processing;
 
-namespace gallery;
+namespace gallery.front;
 
-public static class ArtRenderer
+public class AuctionArtRenderer : IArtRenderer
 {
     //public const int FinalSize = 1024;
     //public const int MaxInnerArtSize = FinalSize - 15;
     public static (int x, int y) MinRectSize = (200, 100);
 
-    private static readonly FontCollection fonts = new FontCollection();
-    private static readonly FontFamily vollkorn;
-    private static readonly Font titleFont;
-    private static readonly Font descriptionFont;
+    private readonly FontCollection fonts = new FontCollection();
+    private readonly FontFamily vollkorn;
+    private readonly Font titleFont;
+    private readonly Font descriptionFont;
 
-    static ArtRenderer()
+    public AuctionArtRenderer(string fontPath)
     {
-        vollkorn = fonts.Add("Vollkorn.ttf");
+        vollkorn = fonts.Add(fontPath);
         titleFont = vollkorn.CreateFont(38, FontStyle.Bold);
         descriptionFont = vollkorn.CreateFont(32, FontStyle.Italic);
     }
 
-    public static Image<Rgba32> RenderArtwork(int width, int height, string title, string author, int score, Image<Rgba32> piece)
+    public Image<Rgba32> RenderArtwork(int width, int height, string title, string author, int score, Image<Rgba32> piece)
     {
         int maxInnerWidth = width - 20;
         int maxInnerHeight = height - 20;

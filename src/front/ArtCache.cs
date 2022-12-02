@@ -1,11 +1,19 @@
-﻿using SixLabors.ImageSharp;
+﻿using gallery.shared;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Collections.Concurrent;
 
-namespace gallery;
+namespace gallery.front;
 
-public static class ArtCache
+public class ArtCache
 {
-    public static Dictionary<ArtRequest, Image<Rgba32>> Cache = new();
+    public readonly ConcurrentDictionary<ArtRequest, Image<Rgba32>> Cache = new();
+    public IArtRenderer? Renderer;
+
+    public ArtCache(IArtRenderer renderer)
+    {
+        Renderer = renderer;
+    }
 
     public struct ArtRequest : IEquatable<ArtRequest>
     {
@@ -26,8 +34,11 @@ public static class ArtCache
         public static bool operator !=(ArtRequest left, ArtRequest right) => !(left == right);
     }
 
-    public static async Task<Image<Rgba32>> Load(int w, int h, Artwork work)
+    public async Task<Image<Rgba32>> Load(int w, int h, Artwork work)
     {
+        if (Renderer == null)
+            throw new Exception($"{nameof(Renderer)} is unassigned");
+
         var dataString = work.ImageData ?? "error.png";
 
         var req = new ArtRequest { Width = w, Height = h, DataString = dataString };
@@ -47,9 +58,22 @@ public static class ArtCache
             bytes = File.ReadAllBytes(dataString);
 
         using var piece = Image.Load<Rgba32>(bytes);
-        img = ArtRenderer.RenderArtwork(w, h, work.Name ?? "Untitled", work.Author ?? "Unknown", work.Interactions, piece);
-        Cache.Add(req, img);
+        img = Renderer.RenderArtwork(w, h, work.Name ?? "Untitled", work.Author ?? "Unknown", work.Score, piece);
         piece.Dispose();
+
+        if (!Cache.TryAdd(req, img))
+        {
+            img.Dispose();
+            throw new Exception("Failed to add rendered artwork to the cache probably because of a duplicate key, somehow");
+        }
+
         return img;
+    }
+
+    public void Clear()
+    {
+        foreach (var item in Cache.Values)
+            item.Dispose();
+        Cache.Clear();
     }
 }

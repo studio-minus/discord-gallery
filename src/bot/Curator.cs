@@ -7,7 +7,7 @@ namespace gallery.bot;
 
 public class Curator : IDisposable
 {
-    public bool Enabled;
+    public bool Enabled { get; private set; }
 
     private readonly PersistentCollection<ArtworkReference> art;
 

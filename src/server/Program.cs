@@ -39,7 +39,7 @@ internal class Program
                     break;
                 case "publish":
                     Console.WriteLine("publish started");
-                    galleryServer?.ResetAndPublish();
+                    galleryServer?.Publish();
                     Console.WriteLine("publish success");
                     break;
                 default:
@@ -56,7 +56,7 @@ internal class Program
         public async Task Execute(IJobExecutionContext context)
         {
             Console.WriteLine("Reset job executed!!");
-            galleryServer?.ResetAndPublish();
+            galleryServer?.Publish();
             await Task.Delay(100);
         }
     }

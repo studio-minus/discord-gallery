@@ -7,14 +7,21 @@ using System.Xml.Linq;
 
 namespace gallery.bot;
 
-public class Bot
+public class Bot : IDisposable
 {
+    public readonly Curator Curator;
+
     private readonly DiscordSocketClient client;
     private readonly string token;
     private readonly ulong channelId;
     private readonly ulong guildId;
 
-    public readonly Curator Curator;
+    private static readonly Func<string, bool>[] contentTypeFilters =
+    {
+        s => s.StartsWith("image/", StringComparison.InvariantCultureIgnoreCase), //has to be an image
+        s => !s.Contains("gif", StringComparison.InvariantCultureIgnoreCase), // disallow gifs
+        s => !s.Contains("apng", StringComparison.InvariantCultureIgnoreCase), // disallow animated pngs
+    };
 
     public Bot(string token, ulong channelId, ulong guildId)
     {
@@ -33,7 +40,7 @@ public class Bot
         client.ReactionAdded += ReactionAdded;
         client.ReactionRemoved += ReactionRemoved;
 
-        Curator = new("curator_data", client);
+        Curator = new("curator_data");
 
         this.token = token;
         this.channelId = channelId;
@@ -65,7 +72,19 @@ public class Bot
         //if (arg.Channel is not IGuildChannel g || g.GuildId != guildId)
         //    return Task.CompletedTask;
 
-        Curator.ProcessMessage(msg);
+        if (msg.Type is MessageType.Reply && msg.Reference != null && msg.Reference.MessageId.IsSpecified)
+        {
+            var replyTo = msg.Reference.MessageId;
+            Curator.IncrementScore(replyTo.Value);
+        }
+
+        foreach (var attachment in msg.Attachments)
+            if (contentTypeFilters.All(filter => filter(attachment.ContentType)))
+                Curator.Add(new ArtworkReference(msg.Id, msg.Author.Username, attachment.Url)
+                {
+                    Name = string.IsNullOrWhiteSpace(msg.Content) ? null : msg.Content
+                });
+
         return Task.CompletedTask;
     }
 
@@ -79,7 +98,7 @@ public class Bot
         //if (arg.Channel is not IGuildChannel g || g.GuildId != guildId)
         //    return Task.CompletedTask;
 
-        Curator.DeleteMessage(msg);
+        Curator.Remove(msg.Id);
         return Task.CompletedTask;
     }
 
@@ -120,5 +139,11 @@ public class Bot
     {
         await client.LogoutAsync();
         await client.StopAsync();
+    }
+
+    public void Dispose()
+    {
+        client?.Dispose();
+        Curator.Dispose();
     }
 }

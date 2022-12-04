@@ -1,18 +1,18 @@
 ﻿using Discord.WebSocket;
 using Discord;
 using gallery.shared;
+using System.Net.Mail;
 
 namespace gallery.bot;
 
 public class Curator : IDisposable
 {
     public bool Enabled;
-    public PersistentCollection<ArtworkReference> art;
-    private readonly IDiscordClient client;
 
-    public Curator(string path, IDiscordClient client)
+    private readonly PersistentCollection<ArtworkReference> art;
+
+    public Curator(string path)
     {
-        this.client = client;
         art = new PersistentCollection<ArtworkReference>(path);
         foreach (var item in art)
             Console.WriteLine("Stored art found: {0}", item.MessageId);
@@ -36,20 +36,23 @@ public class Curator : IDisposable
         Console.WriteLine("Curator disabled. :(");
     }
 
-    public void ProcessMessage(SocketMessage message)
+    public void Add(ArtworkReference art)
     {
-        foreach (var attachment in message.Attachments)
+        Console.WriteLine("Artwork added: {0} by {1}: {2}", art.Name, art.Author, art.ImageUrl);
+        this.art.Add(art);
+    }
+
+    public bool Remove(ulong messageid)
+    {
+        var found = art.FirstOrDefault(a => a.MessageId == messageid);
+        if (found != null)
         {
-            if (attachment.ContentType.StartsWith("image/", StringComparison.InvariantCultureIgnoreCase) 
-                && !attachment.ContentType.Contains("gif", StringComparison.InvariantCultureIgnoreCase))
-            {
-                Console.WriteLine("Artwork: {0} by {1}: {2}", message.Content, message.Author.Username, attachment.Url);
-                art.Add(new ArtworkReference(message.Id, message.Author.Username, attachment.Url)
-                {
-                    Name = string.IsNullOrWhiteSpace(message.Content) ? null : message.Content
-                });
-            }
+            Console.WriteLine("Artwork removed: {0}", found.Name);
+            art.Remove(found);
+            return true;
         }
+
+        return false;
     }
 
     public void IncrementScore(ulong messageid)
@@ -75,28 +78,36 @@ public class Curator : IDisposable
     public IEnumerable<Artwork> GetBestArtwork(int amount)
     {
         var copy = art.OrderByDescending(static artwork => artwork.Score).Take(amount).ToArray();
-        foreach (var item in copy)
+        foreach (var a in copy)
         {
             var artwork = new Artwork
             {
-                Name = item.Name,
-                Author = item.Author,
-                Score = item.Score,
-                ImageData = item.ImageUrl,
+                Name = a.Name,
+                Author = a.Author,
+                Score = a.Score,
+                ImageData = a.ImageUrl,
             };
 
             yield return artwork;
         }
     }
 
+    public IReadOnlyCollection<Artwork> GetAll()
+    {
+        return art.Select(a => new Artwork
+        {
+            Name = a.Name,
+            Author = a.Author,
+            Score = a.Score,
+            ImageData = a.ImageUrl,
+        }).ToList().AsReadOnly();
+    }
+
+    public int Count => art.Count;
+
     public void Clear()
     {
         art.Clear();
-    }
-
-    public void DeleteMessage(Cacheable<IMessage, ulong> arg)
-    {
-        art.Remove(m => m.MessageId == arg.Id);
     }
 
     public void Dispose()

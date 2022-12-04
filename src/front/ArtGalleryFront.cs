@@ -14,8 +14,6 @@ public class ArtGalleryFront
 {
     public readonly DirectoryInfo ArtDirectory;
 
-    private const string apiSecret = "D3BE5284-B918-4279-8EE7-77FFA1E4566F";
-
     private static readonly ConcurrentDictionary<string, Artwork> artworks = new();
     private static readonly ConcurrentDictionary<(string, int, int), byte[]> imgCache = new();
     private static readonly ArtCache artCache = new ArtCache(null);
@@ -164,38 +162,6 @@ public class ArtGalleryFront
 
         ctx.Response.StatusCode = 404;
         await ctx.Response.SendAsync("Artwork not found");
-    }
-
-    [StaticRoute(HttpMethod.POST, "/art")]
-    public static async Task UploadArt(HttpContext ctx)
-    {
-        if (!ctx.Request.Data.CanRead || ctx.Request.ContentLength == 0)
-            throw new Exception("empty body");
-        var b = new byte[2048];
-        int count = await ctx.Request.Data.ReadAsync(b);
-        var body = JsonSerializer.Deserialize<UploadArtwork>(Encoding.UTF8.GetString(b.AsSpan(0, count)));
-        if (body == null || body.Secret != apiSecret)
-        {
-            ctx.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-            ctx.Response.Headers.Add("WWW-Authenticate", "The given object needs to have a valid Secret field");
-            await ctx.Response.SendAsync("Invalid secret");
-            return;
-        }
-        var id = shortid.ShortId.Generate();
-        var art = new Artwork()
-        {
-            Author = body.Author,
-            Name = body.Name,
-            Score = body.Score,
-            ImageData = body.ImageData
-        };
-        bool success = artworks.TryAdd(id, art);
-
-        if (success)
-            File.WriteAllText(Configuration.Current.ArtPath + "/" + id + ".json", JsonSerializer.Serialize(art));
-
-        ctx.Response.StatusCode = success ? 200 : 500;
-        await ctx.Response.SendAsync(success ? id : "Failed to add artwork to dictionary");
     }
 
     [StaticRoute(HttpMethod.GET, "/")]

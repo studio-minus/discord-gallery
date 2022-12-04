@@ -4,7 +4,7 @@ using System.Collections;
 
 namespace gallery.shared;
 
-public class PersistentCollection<T> : IDisposable, IEnumerable<T>
+public class PersistentCollection<T> : IDisposable, IReadOnlyCollection<T>
 {
     public readonly FileInfo Source;
 
@@ -12,6 +12,8 @@ public class PersistentCollection<T> : IDisposable, IEnumerable<T>
     private readonly CerasSerializer ceras = new();
     private readonly Mutex manipulation = new();
     private readonly Mutex saving = new();
+
+    public int Count => coll.Count;
 
     public PersistentCollection(string path)
     {
@@ -65,6 +67,26 @@ public class PersistentCollection<T> : IDisposable, IEnumerable<T>
         try
         {
             coll.Add(t);
+            SaveToSource();
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+        finally
+        {
+            manipulation.ReleaseMutex();
+        }
+    }
+
+    public void AddRange(ReadOnlySpan<T> t)
+    {
+        manipulation.WaitOne();
+
+        try
+        {
+            foreach (var i in t)
+                coll.Add(i);
             SaveToSource();
         }
         catch (Exception)

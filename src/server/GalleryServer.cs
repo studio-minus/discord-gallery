@@ -7,7 +7,8 @@ namespace gallery.server;
 
 public class GalleryServer
 {
-    public bool IsRunning;
+    public bool IsRunning { get; private set; }
+
     private readonly ArtGalleryFront gallery;
     private readonly Bot bot;
 
@@ -31,15 +32,18 @@ public class GalleryServer
         IsRunning = false;
     }
 
-    public void ResetAndPublish()
+    public void Publish(bool clear = true)
     {
         // get new curated exhibition
         var best = bot.Curator.GetBestArtwork(5).ToArray();
 
         // clear old exhibition and old artwork
-        bot.Curator.Clear();
-        foreach (var item in Directory.GetFiles(Configuration.Current.ArtPath, "*.json"))
-            File.Delete(item);
+        if (clear)
+        {
+            bot.Curator.Clear();
+            foreach (var item in Directory.GetFiles(Configuration.Current.ArtPath, "*.json"))
+                File.Delete(item);
+        }
 
         // populate art directory for persistence
         foreach (var item in best)

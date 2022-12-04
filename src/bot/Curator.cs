@@ -33,6 +33,7 @@ public class Curator : IDisposable
         if (!Enabled)
             return;
 
+        Enabled = false;
         Console.WriteLine("Curator disabled. :(");
     }
 

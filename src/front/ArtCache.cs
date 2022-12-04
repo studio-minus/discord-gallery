@@ -7,8 +7,9 @@ namespace gallery.front;
 
 public class ArtCache
 {
-    public readonly ConcurrentDictionary<ArtRequest, Image<Rgba32>> Cache = new();
     public IArtRenderer? Renderer;
+
+    private readonly ConcurrentDictionary<ArtRequest, Image<Rgba32>> cache = new();
 
     public ArtCache(IArtRenderer renderer)
     {
@@ -42,7 +43,7 @@ public class ArtCache
         var dataString = work.ImageData ?? "error.png";
 
         var req = new ArtRequest { Width = w, Height = h, DataString = dataString };
-        if (Cache.TryGetValue(req, out var img))
+        if (cache.TryGetValue(req, out var img))
             return img;
         var bytes = Array.Empty<byte>();
 
@@ -61,7 +62,7 @@ public class ArtCache
         img = Renderer.RenderArtwork(w, h, work.Name ?? "Untitled", work.Author ?? "Unknown", work.Score, piece);
         piece.Dispose();
 
-        if (!Cache.TryAdd(req, img))
+        if (!cache.TryAdd(req, img))
         {
             img.Dispose();
             throw new Exception("Failed to add rendered artwork to the cache probably because of a duplicate key, somehow");
@@ -72,8 +73,10 @@ public class ArtCache
 
     public void Clear()
     {
-        foreach (var item in Cache.Values)
+        foreach (var item in cache.Values)
             item.Dispose();
-        Cache.Clear();
+        cache.Clear();
     }
+
+    public int Count => cache.Count;
 }

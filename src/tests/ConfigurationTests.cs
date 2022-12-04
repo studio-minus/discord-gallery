@@ -1,5 +1,6 @@
 using gallery.shared;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace gallery.tests;

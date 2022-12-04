@@ -43,4 +43,98 @@ public class CuratorTests
             Assert.AreEqual(top.ImageUrl, best.First().ImageData, "Top art does not match");
         }
     }
+
+    [TestMethod]
+    public void Constructor()
+    {
+        var path = Path.GetTempFileName();
+        var curator = new Curator(path);
+        Assert.IsNotNull(curator);
+        Assert.IsFalse(curator.Enabled);
+    }
+
+    [TestMethod]
+    public void Enable()
+    {
+        var path = Path.GetTempFileName();
+        var curator = new Curator(path);
+        curator.Enable();
+        Assert.IsTrue(curator.Enabled);
+    }
+
+    [TestMethod]
+    public void Disable()
+    {
+        var path = Path.GetTempFileName();
+        var curator = new Curator(path);
+        curator.Enable();
+        Assert.IsTrue(curator.Enabled);
+        curator.Disable();
+        Assert.IsFalse(curator.Enabled);
+    }
+
+    [TestMethod]
+    public void Add()
+    {
+        var path = Path.GetTempFileName();
+        var curator = new Curator(path);
+        var artwork = new ArtworkReference
+        {
+            Name = "Test Artwork",
+            Author = "Test Author",
+            ImageUrl = "https://example.com/test-image.jpg"
+        };
+        curator.Add(artwork);
+        Assert.AreEqual(1, curator.Count);
+    }
+
+    [TestMethod]
+    public void Remove()
+    {
+        var path = Path.GetTempFileName();
+        var curator = new Curator(path);
+        var artwork = new ArtworkReference
+        {
+            Name = "Test Artwork",
+            Author = "Test Author",
+            ImageUrl = "https://example.com/test-image.jpg"
+        };
+        curator.Add(artwork);
+        var result = curator.Remove(artwork.MessageId);
+        Assert.IsTrue(result);
+        Assert.AreEqual(0, curator.Count);
+    }
+
+    [TestMethod]
+    public void IncrementScore()
+    {
+        var path = Path.GetTempFileName();
+        var curator = new Curator(path);
+        var artwork = new ArtworkReference
+        {
+            Name = "Test Artwork",
+            Author = "Test Author",
+            ImageUrl = "https://example.com/test-image.jpg"
+        };
+        curator.Add(artwork);
+        curator.IncrementScore(artwork.MessageId);
+        Assert.AreEqual(1, curator.GetAll().First().Score);
+    }
+
+    [TestMethod]
+    public void DecrementScore()
+    {
+        var path = Path.GetTempFileName();
+        var curator = new Curator(path);
+        var artwork = new ArtworkReference
+        {
+            Name = "Test Artwork",
+            Author = "Test Author",
+            ImageUrl = "https://example.com/test-image.jpg",
+            Score = 10
+        };
+        curator.Add(artwork);
+        curator.DecrementScore(artwork.MessageId);
+        Assert.AreEqual(9, curator.GetAll().First().Score);
+    }
 }

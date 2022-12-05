@@ -3,7 +3,7 @@ using gallery.shared;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
-namespace gallery.tests;
+namespace gallery.tests.unit;
 
 [TestClass]
 public class ArtCacheTests

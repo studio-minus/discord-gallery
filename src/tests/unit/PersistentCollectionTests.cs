@@ -1,7 +1,7 @@
 ﻿using gallery.shared;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace gallery.tests;
+namespace gallery.tests.unit;
 
 [TestClass]
 public class PersistentCollectionTests
@@ -134,16 +134,16 @@ public class PersistentCollectionTests
             var tasks = new Task[taskCount];
             for (int i = 0; i < taskCount; i += 2)
             {
-                tasks[i] = (Task.Run(() =>
+                tasks[i] = Task.Run(() =>
                 {
                     var v = Random.Shared.Next(0, count);
                     f.Add(v);
                     Assert.IsTrue(f.Remove(v));
-                }));
-                tasks[i + 1] = (Task.Run(() =>
+                });
+                tasks[i + 1] = Task.Run(() =>
                 {
                     f.Remove(Random.Shared.Next(0, count));
-                }));
+                });
             }
 
             Task.WaitAll(tasks);

@@ -1,7 +1,7 @@
 ﻿using gallery.bot;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace gallery.tests;
+namespace gallery.tests.unit;
 
 [TestClass]
 public class CuratorTests

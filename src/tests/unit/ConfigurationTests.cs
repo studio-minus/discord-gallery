@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace gallery.tests;
+namespace gallery.tests.unit;
 
 [TestClass]
 public class ConfigurationTests

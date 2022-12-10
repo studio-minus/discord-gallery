@@ -61,7 +61,7 @@
     </div>
 
     <div class="loading"
-         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
+        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
             <span style="font-weight: bold; color: #FF0061">Studio Minus</span>
             <span>Community Gallery</span>
@@ -70,7 +70,7 @@
     </div>
 
     <div class="error"
-         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
+        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
             <span style="font-weight: bold; font-size: 2em; ">ERROR</span>
             <span style="font-size: 1.5em">Everything is broken.</span>
@@ -92,6 +92,11 @@
 
     <script src="utils.js"></script>
     <script src="audio.js"></script>
+    <script src="worldSdf.js"></script>
+
+    <script>
+        let listenerNormal;
+    </script>
 
     <script type="module">
         import * as THREE from 'three';
@@ -124,7 +129,7 @@
         const textureLoader = new THREE.TextureLoader();
 
         const renderer = new THREE.WebGLRenderer();
-        renderer.toneMappingExposure = 0.8;
+        renderer.toneMappingExposure = 0.3;
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.setSize(window.innerWidth * renderScale, window.innerHeight * renderScale);
         renderer.domElement.style.width = '100vw';
@@ -151,6 +156,26 @@
             player.position.x = 0;
             player.position.y = playerHeight;
             player.position.z = 24;
+
+            // const sdfGridScale = 0.25;
+            // const sdfGridRes = 128;
+            // for (let y = 0; y < sdfGridRes; y++)
+            //     for (let x = 0; x < sdfGridRes; x++) {
+            //         const pos = {
+            //             x: (x - sdfGridRes / 2) * sdfGridScale,
+            //             z: (y - sdfGridRes / 2) * sdfGridScale
+            //         };
+            //         const dist = getDistanceFromWall({ x: pos.x, y: pos.z });
+            //         if (dist > 0)
+            //             continue;
+
+            //         const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffea00 }));
+            //         cube.scale.x = cube.scale.y = cube.scale.z = sdfGridScale * 0.5;
+            //         cube.position.x = pos.x;
+            //         cube.position.z = pos.z;
+            //         scene.add(cube);
+            //     }
+
             setTimeout(async () => {
                 meshLoader.load('TentScene.glb', async (gltf) => {
 
@@ -212,22 +237,6 @@
                         }
                     });
 
-                    //const ezels = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a, b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
-                    //for (let i = 0; i < 5; i++) {
-                    //    console.log(ezels[i])
-                    //    const w = Math.ceil(ezels[i].scale.x * 1024);
-                    //    const h = Math.ceil(ezels[i].scale.z * 1024);
-                    //    console.log(`/art/${i}/image/${w}/${h}`)
-                    //    let img = await textureLoader.load(`/art/${i}/image/${w}/${h}`);
-                    //    img.flipY = false;
-                    //    let mat = ezels[i].material;
-                    //    mat.alphaTest = 0.5;
-                    //    mat.transparent = false;
-                    //    mat.color = new THREE.Color(0.9, 0.9, 0.9, 1);
-                    //    mat.map = img;
-                    //    mat.needsUpdate = true;
-                    //}
-
                     scene.add(gltf.scene);
                     console.log("map loaded")
 
@@ -274,6 +283,8 @@
         }
 
         function update(dt) {
+            listenerNormal = getNormalForWall({ x: listener.positionX.value, y: listener.positionZ.value });
+
             secondCounter += dt;
             let mouseDelta = { x: mousePos.x - previousMousePos.x, y: mousePos.y - previousMousePos.y };
             previousMousePos.x = mousePos.x;
@@ -318,6 +329,14 @@
             player.position.x += playerVelocity.x;
             player.position.z += playerVelocity.y;
 
+            let maxIterations = 1000;
+            while (getDistanceFromWall({ x: player.position.x, y: player.position.z }) <= 0.1) {
+                player.position.x += listenerNormal.x * 0.001;
+                player.position.z += listenerNormal.y * 0.001;
+                if (maxIterations-- <= 0)
+                    break;
+            }
+
             if (keyStates['Space']) {
                 camera.fov = smoothApproach(camera.fov, lastFovTarget, fovs[1], 15, dt);
                 lastFovTarget = fovs[1];
@@ -350,9 +369,48 @@
                 secondCounter = 0;
 
                 if (Math.random() > 0.9) {
-                    const bear = await createPointSpeaker(sounds.bear[Math.floor(Math.random() * sounds.bear.length)], 8, 0.8, 4, 4, 5);
+                    const bear = await createPointSpeaker(
+                        sounds.bear[Math.floor(Math.random() * sounds.bear.length)],
+                        8, 0.8, 4, 4, 5);
                     bear.start();
                     bear.addEventListener('ended', () => bear.disconnect());
+                }
+
+                if (Math.random() > 0.95) {
+                    const creak = await createPointSpeaker(
+                        sounds.creaking[Math.floor(Math.random() * sounds.creaking.length)],
+                        0, 8, 0, 5, 7);
+                    creak.start();
+                    creak.addEventListener('ended', () => creak.disconnect());
+                }
+
+                if (Math.random() > 0.9) {
+                    const cloth = await createPointSpeaker(
+                        sounds.cloth[Math.floor(Math.random() * sounds.cloth.length)],
+                        0, 5, 0, 3, 15);
+                    cloth.start();
+                    cloth.addEventListener('ended', () => cloth.disconnect());
+                }
+
+                if (Math.random() > 0.9 && worldPos.length() > 40 ) {
+                    const w = await createPointSpeaker("sfx/running.wav",
+                        player.position.x + randomRange(-10,10), 1, player.position.z + randomRange(-10,10), 4, 15);
+                    w.start();
+                    w.addEventListener('ended', () => w.disconnect());
+                }
+
+                if (Math.random() > 0.95) {
+                    const gladiators = await createPointSpeaker(
+                        sounds.gladiators[Math.floor(Math.random() * sounds.gladiators.length)],
+                        0, 5, -9, 4, 15);
+                    gladiators.start();
+                    gladiators.addEventListener('ended', () => gladiators.disconnect());
+                }
+
+                if (Math.random() > 0.9995) {
+                    const wilJeNietHoren = await createPointSpeaker(sounds.wilJeNietHoren,40, 10, 0, 2, 60);
+                    wilJeNietHoren.start();
+                    wilJeNietHoren.addEventListener('ended', () => wilJeNietHoren.disconnect());
                 }
 
                 if (!crowdSource && insideness > 0.5 && Math.random() > 0.994) {

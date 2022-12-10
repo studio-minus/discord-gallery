@@ -16,8 +16,23 @@ const sounds = {
         "sfx/bear-05.wav",
         "sfx/bear-06.wav",
     ],
-    outdoorAmbience: "sfx/outdoors.ogg",
+    creaking: [
+        "sfx/wood-creak-01.wav",
+        "sfx/wood-creak-02.wav",
+        "sfx/wood-creak-03.wav",
+    ],
+    gladiators: [
+        "sfx/circus-01.ogg",
+        "sfx/circus-02.ogg",
+    ],
+    cloth: [
+        "sfx/cloth-01.wav",
+        "sfx/cloth-02.wav",
+        "sfx/cloth-03.wav",
+    ],
+    outdoorAmbience: "sfx/night.ogg",
     peopleTalking: "sfx/people-talking.ogg",
+    wilJeNietHoren: "sfx/ditwiljenooithoren.mp3",
 };
 
 async function initaliseAudio() {
@@ -32,16 +47,21 @@ async function initaliseAudio() {
     outdoorGainNode.gain.value = 0.5;
     outdoorLowpassNode.connect(outdoorGainNode).connect(audioCtx.destination)
 
-    let outdoorSound = await createAmbientSpeaker('sfx/outdoors.ogg');
+    let outdoorSound = await createAmbientSpeaker(sounds.outdoorAmbience);
     outdoorSound.start();
 
-    const clowntje = await createPointSpeaker('c.mp3', 0, 10, -14, 5, 40);
-    clowntje.loop = true;
-    clowntje.start();
+    const lamps = await createPointSpeaker('sfx/lamp.wav', 0, 9, 0, 2, 30);
+    lamps.loop = true;
+    lamps.start();
 
-    const lamp = await createPointSpeaker('sfx/lamp.wav', 0, 9, 0, 2, 30);
-    lamp.loop = true;
-    lamp.start();
+
+    const lamp1 = await createPointSpeaker('sfx/lamp.wav', 5.8, 0, 16.6, 7, 5);
+    lamp1.loop = true;
+    lamp1.start();
+
+    const lamp2 = await createPointSpeaker('sfx/lamp.wav', -5.8, 0, 16.6, 7, 5);
+    lamp2.loop = true;
+    lamp2.start();
 }
 
 async function loadAudio(path) {

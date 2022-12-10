@@ -10,3 +10,7 @@ function smoothApproach(pastPosition, pastTargetPosition, targetPosition, speed,
         return pastPosition;
     return result;
 }
+
+function randomRange(min, max){
+    return mapRange(0, 1, min, max, Math.random());
+}

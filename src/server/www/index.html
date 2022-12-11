@@ -94,10 +94,6 @@
     <script src="audio.js"></script>
     <script src="worldSdf.js"></script>
 
-    <script>
-        let listenerNormal;
-    </script>
-
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'GLTFLoader';
@@ -283,8 +279,6 @@
         }
 
         function update(dt) {
-            listenerNormal = getNormalForWall({ x: listener.positionX.value, y: listener.positionZ.value });
-
             secondCounter += dt;
             let mouseDelta = { x: mousePos.x - previousMousePos.x, y: mousePos.y - previousMousePos.y };
             previousMousePos.x = mousePos.x;
@@ -330,9 +324,10 @@
             player.position.z += playerVelocity.y;
 
             let maxIterations = 1000;
+            let normal = getNormalForWall({ x: player.position.x, y: player.position.z });
             while (getDistanceFromWall({ x: player.position.x, y: player.position.z }) <= 0.1) {
-                player.position.x += listenerNormal.x * 0.001;
-                player.position.z += listenerNormal.y * 0.001;
+                player.position.x += normal.x * 0.001;
+                player.position.z += normal.y * 0.001;
                 if (maxIterations-- <= 0)
                     break;
             }
@@ -392,9 +387,9 @@
                     cloth.addEventListener('ended', () => cloth.disconnect());
                 }
 
-                if (Math.random() > 0.9 && worldPos.length() > 40 ) {
+                if (Math.random() > 0.9 && worldPos.length() > 40) {
                     const w = await createPointSpeaker("sfx/running.wav",
-                        player.position.x + randomRange(-10,10), 1, player.position.z + randomRange(-10,10), 4, 15);
+                        player.position.x + randomRange(-10, 10), 1, player.position.z + randomRange(-10, 10), 4, 15);
                     w.start();
                     w.addEventListener('ended', () => w.disconnect());
                 }
@@ -408,7 +403,7 @@
                 }
 
                 if (Math.random() > 0.9995) {
-                    const wilJeNietHoren = await createPointSpeaker(sounds.wilJeNietHoren,40, 10, 0, 2, 60);
+                    const wilJeNietHoren = await createPointSpeaker(sounds.wilJeNietHoren, 40, 10, 0, 2, 60);
                     wilJeNietHoren.start();
                     wilJeNietHoren.addEventListener('ended', () => wilJeNietHoren.disconnect());
                 }

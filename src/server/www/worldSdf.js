@@ -16,6 +16,7 @@ function getDistanceFromWall(p) {
 
     let bear = sdBox(p, { x: 1.8, y: 1.5 }, { x: 7.3, y: 3.8 })
     distance = min(distance, bear);
+    distance = min(distance, sdCircle(p, 2, { x: 7.5, y: 5.4 })); //extra littel blob
 
     let ezel1 = sdCircle(p, 1, { x: -6.8, y: -.02 })
     distance = min(distance, ezel1);
@@ -42,7 +43,7 @@ function getDistanceFromWall(p) {
 }
 
 function getNormalForWall(p) {
-    const o = 0.1;
+    const o = 0.2;
     let left = getDistanceFromWall({ x: p.x - o, y: p.y });
     let right = getDistanceFromWall({ x: p.x + o, y: p.y });
     let top = getDistanceFromWall({ x: p.x, y: p.y + o });

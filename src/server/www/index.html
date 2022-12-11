@@ -436,15 +436,17 @@
                 }
             }
 
-            listener.positionX.value = worldPos.x;
-            listener.positionY.value = worldPos.y;
-            listener.positionZ.value = worldPos.z;
-            listener.forwardX.value = dir.x;
-            listener.forwardY.value = dir.y;
-            listener.forwardZ.value = dir.z;
-            listener.upX.value = 0;
-            listener.upY.value = 1;
-            listener.upZ.value = 0;
+            listener.setPosition(worldPos.x, worldPos.y, worldPos.z);
+            // listener.positionX.value = worldPos.x;
+            // listener.positionY.value = worldPos.y;
+            // listener.positionZ.value = worldPos.z;
+            listener.setOrientation(dir.x,dir.y,dir.z,0,1,0);
+            // listener.forwardX.value = dir.x;
+            // listener.forwardY.value = dir.y;
+            // listener.forwardZ.value = dir.z;
+            // listener.upX.value = 0;
+            // listener.upY.value = 1;
+            // listener.upZ.value = 0;
 
             if (outdoorLowpassNode && outdoorGainNode) {
                 outdoorGainNode.gain.value = mapRange(0, 1, 0.5, 0.1, insideness);

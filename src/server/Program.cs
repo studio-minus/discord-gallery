@@ -1,4 +1,5 @@
-﻿using gallery.shared;
+﻿using gallery.bot;
+using gallery.shared;
 using Quartz;
 using Quartz.Impl;
 
@@ -11,8 +12,11 @@ internal class Program
     private static async Task Main(string[] args)
     {
         Configuration.Load(args.Length > 0 ? args[0] : "config.json");
-        galleryServer = new GalleryServer();
-        await galleryServer.Start();
+        await RunServer();
+    }
+
+    private static async Task RunServer()
+    {
 
         var factory = new StdSchedulerFactory();
         var scheduler = await factory.GetScheduler();
@@ -28,24 +32,56 @@ internal class Program
 
         await scheduler.Start();
 
-        while (galleryServer?.IsRunning ?? false)
+        bool shouldExitForReal = false;
+        while (!shouldExitForReal)
         {
-            var input = Console.ReadLine();
-            switch (input)
+            try
             {
-                case "quit":
-                    if (galleryServer != null)
-                        await galleryServer.Stop();
-                    break;
-                case "publish":
-                    Console.WriteLine("publish started");
-                    galleryServer?.Publish();
-                    Console.WriteLine("publish success");
-                    break;
-                default:
-                    Console.WriteLine("unknown command");
-                    break;
+                galleryServer?.Dispose();
+                galleryServer = new GalleryServer();
+                await galleryServer.Start();
+
+                while (galleryServer?.IsRunning ?? false)
+                {
+                    var input = Console.ReadLine();
+                    switch (input)
+                    {
+                        case "quit":
+                            if (galleryServer != null)
+                                await galleryServer.Stop();
+                            shouldExitForReal = true;
+                            break;
+                        case "publish":
+                            Console.WriteLine("publish started");
+                            galleryServer?.Publish();
+                            Console.WriteLine("publish success");
+                            break;
+                        case "messageTest":
+                            if (galleryServer != null)
+                                Task.Run(() => galleryServer.Bot.SendPublishMessage(galleryServer.Bot.Curator.GetBestArtwork(5).ToArray()));
+                            break;
+                        default:
+                            Console.WriteLine("unknown command");
+                            break;
+                    }
+                }
             }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine("Server crashed: {0}", e.Message);
+            }
+            finally
+            {
+                try
+                {
+                    galleryServer?.Stop();
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine("Gallery server failed to stop: {0}", e.Message);
+                }
+            }
+
         }
 
         await scheduler.Shutdown();
@@ -56,7 +92,14 @@ internal class Program
         public async Task Execute(IJobExecutionContext context)
         {
             Console.WriteLine("Reset job executed!!");
-            galleryServer?.Publish();
+            try
+            {
+                galleryServer?.Publish();
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine("Publish job failed: {0}", e.Message);
+            }
             await Task.Delay(100);
         }
     }

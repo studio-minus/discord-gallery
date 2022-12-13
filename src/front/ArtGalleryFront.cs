@@ -10,7 +10,7 @@ using HttpMethod = HttpServerLite.HttpMethod;
 
 namespace gallery.front;
 
-public class ArtGalleryFront
+public class ArtGalleryFront : IDisposable
 {
     public readonly DirectoryInfo ArtDirectory;
 
@@ -66,12 +66,17 @@ public class ArtGalleryFront
         if (Configuration.Current.SslCert == null)
             server = new Webserver(Configuration.Current.Ip, Configuration.Current.Port, Index);
         else
-            server = new Webserver(Configuration.Current.Ip, Configuration.Current.Port, true, 
-                                   Configuration.Current.SslCert, Configuration.Current.SslCertPassword, Index);
+        {
+            server = new Webserver(Configuration.Current.Ip, Configuration.Current.Port, Index,
+                new System.Security.Cryptography.X509Certificates.X509Certificate2(Configuration.Current.SslCert, Configuration.Current.SslCertPassword));
+            //server = new Webserver(Configuration.Current.Ip, Configuration.Current.Port, true, 
+            //                       Configuration.Current.SslCert, Configuration.Current.SslCertPassword, Index);
+        }
 
         server.Settings.Debug.Responses = true;
         server.Settings.Debug.Routing = true;
         server.Settings.Headers.Host = "https://" + server.Settings.Hostname + ":" + server.Settings.Port;
+        server.Settings.Ssl.AcceptInvalidAcertificates = true;
 
         server.Events.Logger = Console.WriteLine;
         server.Events.Exception += (o, e) =>
@@ -169,6 +174,11 @@ public class ArtGalleryFront
     {
         ctx.Response.ContentType = "text/html";
         await ctx.Response.SendAsync(File.ReadAllBytes("www/index.html"));
+    }
+
+    public void Dispose()
+    {
+        server.Dispose();
     }
 
     public class UploadArtwork

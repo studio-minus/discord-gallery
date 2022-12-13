@@ -1,46 +1,53 @@
 ﻿using gallery.bot;
 using gallery.front;
 using gallery.shared;
+using SixLabors.Fonts.Unicode;
 using System.Text.Json;
 
 namespace gallery.server;
 
-public class GalleryServer
+public class GalleryServer : IDisposable
 {
     public bool IsRunning { get; private set; }
 
     private readonly ArtGalleryFront gallery;
-    private readonly Bot bot;
+    public readonly Bot Bot;
 
     public GalleryServer()
     {
         gallery = new ArtGalleryFront(new DirectoryInfo(Path.GetFullPath(Configuration.Current.ArtPath))); //TODO is dit nodig?
-        bot = new Bot(Configuration.Current.DiscordBotToken, Configuration.Current.ChannelId, Configuration.Current.GuildId);
+        Bot = new Bot(Configuration.Current.DiscordBotToken, Configuration.Current.ChannelId, Configuration.Current.GuildId);
     }
 
     public async Task Start()
     {
         gallery.StartServer();
-        await bot.Start();
+        await Bot.Start();
         IsRunning = true;
     }
 
     public async Task Stop()
     {
         gallery.StopServer();
-        await bot.Stop();
+        await Bot.Stop();
         IsRunning = false;
     }
 
     public void Publish(bool clear = true)
     {
         // get new curated exhibition
-        var best = bot.Curator.GetBestArtwork(5).ToArray();
+        var best = Bot.Curator.GetBestArtwork(5).ToArray();
+
+        if (best.Length == 0)
+        {
+            Console.WriteLine("No new art was found... where is everyone? :(");
+            return;
+        }
 
         // clear old exhibition and old artwork
         if (clear)
         {
-            bot.Curator.Clear();
+            Bot.Curator.Clear();
             foreach (var item in Directory.GetFiles(Configuration.Current.ArtPath, "*.json"))
                 File.Delete(item);
         }
@@ -53,7 +60,15 @@ public class GalleryServer
             Console.WriteLine("Saved new artwork to exhibition: {0}", item.Name);
         }
 
+        Task.Run(async () => await Bot.SendPublishMessage(best));
+
         // read new exhibition
         gallery.RefreshArtDirectory();
+    }
+
+    public void Dispose()
+    {
+        gallery.Dispose();
+        Bot.Dispose();
     }
 }

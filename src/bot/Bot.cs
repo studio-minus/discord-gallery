@@ -1,9 +1,7 @@
 ﻿using Discord.WebSocket;
 using Discord;
-using Newtonsoft.Json.Linq;
-using System.Net.Mime;
-using System.Collections.Concurrent;
-using System.Xml.Linq;
+using gallery.shared;
+using System.Text;
 
 namespace gallery.bot;
 
@@ -15,6 +13,29 @@ public class Bot : IDisposable
     private readonly string token;
     private readonly ulong channelId;
     private readonly ulong guildId;
+
+    private static readonly string[] PublishMessages =
+    {
+        "🎪 Step right up, ladies and gents, and behold the finest art this community has to offer! " +
+        "I have put together a spectacular exhibition at the Community Art Gallery, featuring {0} masterpieces of unmatched beauty and splendor. " +
+        "Don't miss this opportunity to feast your eyes on these wondrous works of art, on display for one week only! 🎪",
+
+        "🎪 Gather around, everyone, and come see the awe-inspiring artwork on show at the Community Art Gallery! " +
+        "I have curated a stunning exhibition of {0} breathtaking masterpieces that you won't want to miss. " +
+        "This is your chance to witness art of unparalleled beauty and magnificence - it's here for only one week! 🎪",
+
+        "🎪 Step up and witness the most extraordinary art this town has to offer! " +
+        "I have organized a phenomenal exhibition at the Community Art Gallery, presenting {0} remarkable pieces of art. " +
+        "Don't miss the opportunity to feast your eyes on these exquisite works of art - it's only here for one week! 🎪",
+
+        "🎪 Everyone, come take a look at the remarkable art that I have on display at the Community Art Gallery! " +
+        "I have compiled an amazing exhibition of {0} remarkable works of art that you simply have to see. " +
+        "This is your chance to experience art of remarkable beauty - it's here for one week only! 🎪",
+
+        "🎪Come one, come all, and see the incredible art I have in store at the Community Art Gallery! " +
+        "I have put together a magnificent exhibition of {0} magnificent masterpieces that you won't want to miss. " +
+        "Don't miss the chance to witness art of unparalleled beauty and grandeur - it's here for one week! 🎪",
+    };
 
     private static readonly Func<string, bool>[] contentTypeFilters =
     {
@@ -139,6 +160,14 @@ public class Bot : IDisposable
     {
         await client.LogoutAsync();
         await client.StopAsync();
+    }
+
+    public async Task SendPublishMessage(Artwork[] best)
+    {
+        var message = string.Format(PublishMessages[Random.Shared.Next(0, PublishMessages.Length)], best.Length) + "\n\nhttps://gallery.studiominus.nl/";
+        var channel = await client.GetChannelAsync(channelId);
+        if (channel is ITextChannel txt)
+            await txt.SendMessageAsync(message);
     }
 
     public void Dispose()

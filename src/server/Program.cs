@@ -17,12 +17,11 @@ internal class Program
 
     private static async Task RunServer()
     {
-
         var factory = new StdSchedulerFactory();
         var scheduler = await factory.GetScheduler();
 
         var galleryResetTrigger = TriggerBuilder.Create();
-        galleryResetTrigger.WithCronSchedule("0 0 0 ? * MON *"); //elke maandag om 08:00 uur 's ochtends
+        galleryResetTrigger.WithCronSchedule("0 0 0 ? * MON *");
 
         var galleryResetJob = JobBuilder.Create<GalleryResetJob>();
 

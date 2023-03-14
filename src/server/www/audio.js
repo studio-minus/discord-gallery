@@ -3,8 +3,12 @@ let listener;
 
 let outdoorLowpassNode;
 let outdoorGainNode;
+
 let crowdSource;
 let crowdGainNode;
+
+let gramophoneSource;
+let gramophoneAudioElem;
 
 const audioBufferCache = {};
 const sounds = {
@@ -62,6 +66,15 @@ async function initaliseAudio() {
     const lamp2 = await createPointSpeaker('sfx/lamp.wav', -5.8, 0, 16.6, 7, 5);
     lamp2.loop = true;
     lamp2.start();
+
+    gramophoneAudioElem = document.createElement('audio');
+    gramophoneAudioElem.src = "sfx/kampvuurliedlied.mp3";
+    gramophoneAudioElem.loop = true;
+
+    gramophoneSource = audioCtx.createMediaElementSource(gramophoneAudioElem)
+    const gramophoneSourcePanner = setAudioPosition(gramophoneSource, -4.53, 1.5, 5.422, 2, 5);
+    gramophoneSourcePanner.connect(audioCtx.destination);
+    // gramophoneAudioElem.play();
 }
 
 async function loadAudio(path) {

@@ -16,7 +16,7 @@ function getDistanceFromWall(p) {
 
     let bear = sdBox(p, { x: 1.8, y: 1.5 }, { x: 7.3, y: 3.8 })
     distance = min(distance, bear);
-    distance = min(distance, sdCircle(p, 2, { x: 7.5, y: 5.4 })); //extra littel blob
+    distance = min(distance, sdCircle(p, 2, { x: 7.5, y: 5.4 })); //extra little blob
 
     let ezel1 = sdCircle(p, 1, { x: -6.8, y: -.02 })
     distance = min(distance, ezel1);
@@ -33,8 +33,12 @@ function getDistanceFromWall(p) {
     let ezel5 = sdCircle(p, 1.1, { x: 6.75, y: 0 })
     distance = min(distance, ezel5);
 
+    //the lights?? i dont remember lamo
     distance = min(distance, sdCircle(p, 0.5, { x: 3.32, y: 0.012 }));
     distance = min(distance, sdCircle(p, 0.5, { x: -3.32, y: 0.012 }));
+
+    //music thing
+    distance = min(distance, sdCircle(p, 0.6, { x: -4.53, y: 5.422 }));
 
     //world bounds
     distance = min(distance, -sdCircle(p, 55));

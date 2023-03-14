@@ -116,6 +116,7 @@
         let previousMousePos = { x: 0, y: 0 };
         let everythingIsLoaded = false;
         let secondCounter = 0;
+        let discObject;
 
         const scene = new THREE.Scene();
         const player = new THREE.Group();
@@ -199,7 +200,7 @@
                     setBasicMaterial(gltf.scene);
 
                     textureLoader.load('booms.png', booms => {
-                        const mat = gltf.scene.children[5].material;
+                        const mat = gltf.scene.children[6].material;
                         booms.wrapS = THREE.RepeatWrapping;
                         booms.wrapT = THREE.RepeatWrapping;
                         mat.alphaTest = 0.5;
@@ -209,15 +210,27 @@
                         mat.needsUpdate = true;
                     });
 
+                    // disc
+                    discObject = gltf.scene.children.filter((m) => m.name.startsWith('Disc'))[0];
+                    textureLoader.load(`https://i.imgur.com/vS88fTd.png`, img => {
+                        img.encoding = THREE.sRGBEncoding
+                        img.flipY = false
+                        discObject.material.alphaTest = 0
+                        discObject.material.transparent = false
+                        discObject.material.color = new THREE.Color(1, 1, 1, 1)
+                        discObject.material.map = img
+                        discObject.material.needsUpdate = true
+                    });
+
                     getArtworkIds().then(async d => {
                         console.log("art found: ", d);
                         const ezels = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a, b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
                         let i = 0;
                         for (const id of d) {
-                            console.log(ezels[i])
+                            // console.log(ezels[i])
                             const w = Math.ceil(ezels[i].scale.x * 1024);
                             const h = Math.ceil(ezels[i].scale.z * 1024);
-                            console.log(`/art/${id}/image/${w}/${h}`)
+                            // console.log(`/art/${id}/image/${w}/${h}`)
                             let img = await textureLoader.load(`/art/${id}/image/${w}/${h}`);
                             img.encoding = THREE.sRGBEncoding;
                             img.flipY = false;
@@ -278,6 +291,9 @@
             return textureLoader.load('/' + artwork.Src);
         }
 
+        let gramophoneIsPlaying = false;
+        let shouldGramophonePlay = false;
+        let canInteractWithGramophone = false;
         function update(dt) {
             secondCounter += dt;
             let mouseDelta = { x: mousePos.x - previousMousePos.x, y: mousePos.y - previousMousePos.y };
@@ -287,6 +303,31 @@
             if (mouseDown) {
                 player.rotation.y += -mouseDelta.x * dt * lookSpeed;
                 camera.rotation.x = Math.max(-1, Math.min(1, camera.rotation.x - mouseDelta.y * dt * lookSpeed));
+            }
+
+            if (discObject)
+            {
+                var closeEnough = discObject.position.distanceTo(player.position) < 1.5;
+
+                if (closeEnough && canInteractWithGramophone)
+                {
+                    canInteractWithGramophone = false;
+                    shouldGramophonePlay = !shouldGramophonePlay;
+                }
+
+                if (!closeEnough)
+                    canInteractWithGramophone = true;
+
+                if (gramophoneIsPlaying)
+                    discObject.rotation.set(0, discObject.rotation.y + dt * 2, 0);
+            }
+
+            if (shouldGramophonePlay != gramophoneIsPlaying){
+                gramophoneIsPlaying = shouldGramophonePlay;
+                if (shouldGramophonePlay)
+                    gramophoneAudioElem.play();
+                else
+                    gramophoneAudioElem.pause();
             }
 
             let lookVector = new THREE.Vector3(0, 0, 0);
@@ -354,6 +395,8 @@
             if (everythingIsLoaded)
                 update(dt);
 
+            // discObject.rotation.z += dt;
+
             let worldPos = new THREE.Vector3();
             camera.getWorldPosition(worldPos);
             let dir = new THREE.Vector3();
@@ -420,7 +463,7 @@
                     crowdSource.start();
                     crowdSource.loop = true;
 
-                    console.log("ze zijn buiten");
+                    // console.log("ze zijn buiten");
                 }
 
                 if (crowdSource && insideness < 1) {

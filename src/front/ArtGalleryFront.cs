@@ -3,7 +3,6 @@ using HttpServerLite;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
-using System.Net;
 using System.Text;
 using System.Text.Json;
 using HttpMethod = HttpServerLite.HttpMethod;
@@ -16,7 +15,7 @@ public class ArtGalleryFront : IDisposable
 
     private static readonly ConcurrentDictionary<string, Artwork> artworks = new();
     private static readonly ConcurrentDictionary<(string, int, int), byte[]> imgCache = new();
-    private static readonly ArtCache artCache = new ArtCache(null);
+    private static readonly ArtCache artCache = new(null!);
 
     private Webserver? server;
 

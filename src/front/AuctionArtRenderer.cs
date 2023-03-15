@@ -8,11 +8,9 @@ namespace gallery.front;
 
 public class AuctionArtRenderer : IArtRenderer
 {
-    //public const int FinalSize = 1024;
-    //public const int MaxInnerArtSize = FinalSize - 15;
-    public static (int x, int y) MinRectSize = (200, 100);
+    public readonly static (int x, int y) NameplateSize = (200, 100);
 
-    private readonly FontCollection fonts = new FontCollection();
+    private readonly FontCollection fonts = new();
     private readonly FontFamily vollkorn;
     private readonly Font titleFont;
     private readonly Font descriptionFont;
@@ -46,9 +44,9 @@ public class AuctionArtRenderer : IArtRenderer
         {
             i.DrawImage(piece, new Point(width / 2 - piece.Width / 2, height / 2 - piece.Height / 2), 1);
 
-            var rectSize = (MinRectSize.x, MinRectSize.y);
-            rectSize.x = Math.Max(rectSize.x, title.Length * (int)titleFont.Size / 2);
-            rectSize.x = Math.Max(rectSize.x, author.Length * (int)descriptionFont.Size / 2);
+            var rectSize = (NameplateSize.x, NameplateSize.y);
+            rectSize.x = Math.Max(rectSize.x, title.Length * (int)(titleFont.Size / 1.5f));
+            rectSize.x = Math.Max(rectSize.x, author.Length * (int)(descriptionFont.Size / 1.5f));
 
             var rect = new Rectangle(width / 2 - rectSize.x / 2, height - 10 - rectSize.y, rectSize.x, rectSize.y);
             i.Draw(Color.Black, 2, rect);

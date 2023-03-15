@@ -62,7 +62,7 @@ public class Configuration : IEquatable<Configuration?>
 
     public override int GetHashCode()
     {
-        HashCode hash = new HashCode();
+        HashCode hash = new();
         hash.Add(ArtPath);
         hash.Add(FrontPath);
         hash.Add(ArtworkFontPath);

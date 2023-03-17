@@ -199,8 +199,27 @@
 
                     setBasicMaterial(gltf.scene);
 
+                    {
+                        const texture = new THREE.CubeTextureLoader().load( [
+                            '/www/cubemap/1.png',
+                            '/www/cubemap/3.png',
+                            '/www/cubemap/2.png',
+                            '/www/cubemap/4.png',
+                            '/www/cubemap/5.png',
+                            '/www/cubemap/6.png',
+                        ] );
+                        // texture.mapping = THREE.EquirectangularReflectionMapping;
+                        const gramophoneMetal = gltf.scene.children.filter((m) => m.name.includes('Gramophone'))[1];
+                        //, 
+                        gramophoneMetal.material.dispose();
+                        gramophoneMetal.material = new THREE.MeshBasicMaterial({color: 0x70380A, envMap: texture});
+                        // gramophoneMetal.material.color = 0xB55D10;
+                        
+                        // gramophoneMetal.material.needsUpdate = true
+                    }
+
                     textureLoader.load('booms.png', booms => {
-                        const mat = gltf.scene.children[6].material;
+                        const mat = gltf.scene.children.filter((m) => m.name.includes('Bomen'))[0].material;
                         booms.wrapS = THREE.RepeatWrapping;
                         booms.wrapT = THREE.RepeatWrapping;
                         mat.alphaTest = 0.5;

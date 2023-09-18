@@ -1,8 +1,9 @@
 {
-  "$type": "gallery.shared.ImageSubmission, shared",
-  "Name": "Het grote circusje",
+  "$type": "gallery.shared.CompositionSubmission, shared",
+  "Name": "Test music",
   "Author": "God",
   "Description": "🎪",
-  "Score": 5212364,
-  "ImageData": "art/circus.png"
+  "Score": 25,
+  "ImageData": "https://i.imgur.com/fklKZvj.jpg",
+  "AudioData": "https://studiominus.nl/Clown%20Song.ogg"
 }

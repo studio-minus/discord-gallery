@@ -1,8 +1,7 @@
 ﻿using gallery.bot;
 using gallery.front;
 using gallery.shared;
-using SixLabors.Fonts.Unicode;
-using System.Text.Json;
+using Newtonsoft.Json;
 
 namespace gallery.server;
 
@@ -36,9 +35,9 @@ public class GalleryServer : IDisposable
     public void Publish(bool clear = true)
     {
         // get new curated exhibition
-        var best = Bot.Curator.GetBestArtwork(5).ToArray();
+        var exhibition = Bot.Curator.GetExhibition(5);
 
-        if (best.Length == 0)
+        if (exhibition.Images.Length == 0)
         {
             Console.WriteLine("No new art was found... where is everyone? :(");
             return;
@@ -53,14 +52,20 @@ public class GalleryServer : IDisposable
         }
 
         // populate art directory for persistence
-        foreach (var item in best)
+        foreach (var item in exhibition.Images)
         {
-            var json = JsonSerializer.Serialize(item);
+            var json = JsonConvert.SerializeObject(item, typeof(ImageSubmission), JsonInstances.Settings);
             File.WriteAllText($"{Configuration.Current.ArtPath}/{Guid.NewGuid()}.json", json);
-            Console.WriteLine("Saved new artwork to exhibition: {0}", item.Name);
+            Console.WriteLine("Saved new image art to exhibition: {0}", item.Name);
+        }
+        if (exhibition.Composition != null)
+        {
+            var json = JsonConvert.SerializeObject(exhibition.Composition, typeof(CompositionSubmission), JsonInstances.Settings);
+            File.WriteAllText($"{Configuration.Current.ArtPath}/{Guid.NewGuid()}.json", json);
+            Console.WriteLine("Saved new composition to exhibition: {0}", exhibition.Composition.Name);
         }
 
-        Task.Run(async () => await Bot.SendPublishMessage(best));
+        Task.Run(async () => await Bot.SendPublishMessage(exhibition));
 
         // read new exhibition
         gallery.RefreshArtDirectory();

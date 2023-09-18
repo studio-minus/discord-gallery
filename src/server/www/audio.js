@@ -8,6 +8,7 @@ let crowdSource;
 let crowdGainNode;
 
 let gramophoneSource;
+let gramophoneLowpassNode;
 let gramophoneAudioElem;
 
 const audioBufferCache = {};
@@ -42,6 +43,7 @@ const sounds = {
 async function initaliseAudio() {
     audioCtx = new AudioContext();
     listener = audioCtx.listener;
+    gramophoneAudioElem = document.createElement('audio');
 
     outdoorLowpassNode = new BiquadFilterNode(audioCtx);
     outdoorLowpassNode.type = 'lowpass';
@@ -67,13 +69,17 @@ async function initaliseAudio() {
     lamp2.loop = true;
     lamp2.start();
 
-    gramophoneAudioElem = document.createElement('audio');
-    gramophoneAudioElem.src = "sfx/kampvuurliedlied.mp3";
     gramophoneAudioElem.loop = true;
 
     gramophoneSource = audioCtx.createMediaElementSource(gramophoneAudioElem)
+    const gramophoneReverb = new ConvolverNode(audioCtx, {
+        buffer: await loadAudio("sfx/impulse.wav")
+    });
+    gramophoneLowpassNode = new BiquadFilterNode(audioCtx);
+    gramophoneLowpassNode.type = 'lowpass';
+    gramophoneLowpassNode.frequency.value = 1500;
     const gramophoneSourcePanner = setAudioPosition(gramophoneSource, -4.53, 1.5, 5.422, 2, 5);
-    gramophoneSourcePanner.connect(audioCtx.destination);
+    gramophoneSourcePanner.connect(gramophoneLowpassNode).connect(gramophoneReverb).connect(audioCtx.destination);
     // gramophoneAudioElem.play();
 }
 

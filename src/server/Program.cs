@@ -57,7 +57,7 @@ internal class Program
                             break;
                         case "messageTest":
                             if (galleryServer != null)
-                                _ = Task.Run(() => galleryServer.Bot.SendPublishMessage(galleryServer.Bot.Curator.GetBestArtwork(5).ToArray()));
+                                _ = Task.Run(() => galleryServer.Bot.SendPublishMessage(galleryServer.Bot.Curator.GetExhibition(5)));
                             break;
                         default:
                             Console.WriteLine("unknown command");

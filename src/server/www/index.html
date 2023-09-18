@@ -61,7 +61,7 @@
     </div>
 
     <div class="loading"
-        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
+         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
             <span style="font-weight: bold; color: #FF0061">Studio Minus</span>
             <span>Community Gallery</span>
@@ -70,7 +70,7 @@
     </div>
 
     <div class="error"
-        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
+         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
             <span style="font-weight: bold; font-size: 2em; ">ERROR</span>
             <span style="font-size: 1.5em">Everything is broken.</span>
@@ -154,25 +154,6 @@
             player.position.y = playerHeight;
             player.position.z = 24;
 
-            // const sdfGridScale = 0.25;
-            // const sdfGridRes = 128;
-            // for (let y = 0; y < sdfGridRes; y++)
-            //     for (let x = 0; x < sdfGridRes; x++) {
-            //         const pos = {
-            //             x: (x - sdfGridRes / 2) * sdfGridScale,
-            //             z: (y - sdfGridRes / 2) * sdfGridScale
-            //         };
-            //         const dist = getDistanceFromWall({ x: pos.x, y: pos.z });
-            //         if (dist > 0)
-            //             continue;
-
-            //         const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffea00 }));
-            //         cube.scale.x = cube.scale.y = cube.scale.z = sdfGridScale * 0.5;
-            //         cube.position.x = pos.x;
-            //         cube.position.z = pos.z;
-            //         scene.add(cube);
-            //     }
-
             setTimeout(async () => {
                 meshLoader.load('TentScene.glb', async (gltf) => {
 
@@ -199,24 +180,13 @@
 
                     setBasicMaterial(gltf.scene);
 
-                    {
-                        const texture = new THREE.CubeTextureLoader().load( [
-                            '/www/cubemap/1.png',
-                            '/www/cubemap/3.png',
-                            '/www/cubemap/2.png',
-                            '/www/cubemap/4.png',
-                            '/www/cubemap/5.png',
-                            '/www/cubemap/6.png',
-                        ] );
-                        // texture.mapping = THREE.EquirectangularReflectionMapping;
+                    textureLoader.load('/www/cubemap/cubemap.png', texture => {
+                        texture.mapping = THREE.EquirectangularReflectionMapping;
                         const gramophoneMetal = gltf.scene.children.filter((m) => m.name.includes('Gramophone'))[1];
-                        //, 
-                        gramophoneMetal.material.dispose();
-                        gramophoneMetal.material = new THREE.MeshBasicMaterial({color: 0x70380A, envMap: texture});
-                        // gramophoneMetal.material.color = 0xB55D10;
-                        
-                        // gramophoneMetal.material.needsUpdate = true
-                    }
+                        gramophoneMetal.material.envMap = texture;
+                        gramophoneMetal.material.combine = THREE.MultiplyOperation;
+                        gramophoneMetal.material.reflectivity = 0.5;
+                    });
 
                     textureLoader.load('booms.png', booms => {
                         const mat = gltf.scene.children.filter((m) => m.name.includes('Bomen'))[0].material;
@@ -231,8 +201,10 @@
 
                     // disc
                     discObject = gltf.scene.children.filter((m) => m.name.startsWith('Disc'))[0];
-                    textureLoader.load(`https://i.imgur.com/vS88fTd.png`, img => {
-                        img.encoding = THREE.sRGBEncoding
+                    const discArt = await getMusicDiscArt();
+                    gramophoneAudioElem.src = discArt.AudioData || "sfx/musicless.ogg";
+                    textureLoader.load(discArt.ImageData || "https://i.imgur.com/ohoJC7u.png", img => {
+                        img.encoding = THREE.sRGBEncoding;
                         img.flipY = false
                         discObject.material.alphaTest = 0
                         discObject.material.transparent = false
@@ -241,15 +213,14 @@
                         discObject.material.needsUpdate = true
                     });
 
+                    // actual artworks
                     getArtworkIds().then(async d => {
                         console.log("art found: ", d);
                         const ezels = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a, b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
                         let i = 0;
                         for (const id of d) {
-                            // console.log(ezels[i])
                             const w = Math.ceil(ezels[i].scale.x * 1024);
                             const h = Math.ceil(ezels[i].scale.z * 1024);
-                            // console.log(`/art/${id}/image/${w}/${h}`)
                             let img = await textureLoader.load(`/art/${id}/image/${w}/${h}`);
                             img.encoding = THREE.sRGBEncoding;
                             img.flipY = false;
@@ -289,7 +260,7 @@
             }, 0)
         }
 
-        function setErrorState(e) {
+        function setErrorState(v) {
             document.querySelectorAll('.loading').forEach(e => e.remove());
             document.querySelectorAll('.loaded').forEach(e => e.remove());
             document.querySelectorAll('canvas').forEach(e => e.remove());
@@ -297,8 +268,15 @@
         }
 
         async function getArtworkIds() {
-            let response = await (await fetch('/art')).json();
+            let response = await (await fetch('/art/images')).json();
             return response;
+        }
+
+        async function getMusicDiscArt() {
+            let musicdisc = await (await fetch('/art/musicdisc')).json();
+            if (!musicdisc)
+                return null;
+            return musicdisc;
         }
 
         async function getArtwork(id) {
@@ -324,12 +302,10 @@
                 camera.rotation.x = Math.max(-1, Math.min(1, camera.rotation.x - mouseDelta.y * dt * lookSpeed));
             }
 
-            if (discObject)
-            {
+            if (discObject && gramophoneAudioElem.src) {
                 var closeEnough = discObject.position.distanceTo(player.position) < 1.5;
 
-                if (closeEnough && canInteractWithGramophone)
-                {
+                if (closeEnough && canInteractWithGramophone) {
                     canInteractWithGramophone = false;
                     shouldGramophonePlay = !shouldGramophonePlay;
                 }
@@ -341,7 +317,7 @@
                     discObject.rotation.set(0, discObject.rotation.y + dt * 2, 0);
             }
 
-            if (shouldGramophonePlay != gramophoneIsPlaying){
+            if (shouldGramophonePlay != gramophoneIsPlaying) {
                 gramophoneIsPlaying = shouldGramophonePlay;
                 if (shouldGramophonePlay)
                     gramophoneAudioElem.play();
@@ -502,7 +478,7 @@
             // listener.positionX.value = worldPos.x;
             // listener.positionY.value = worldPos.y;
             // listener.positionZ.value = worldPos.z;
-            listener.setOrientation(dir.x,dir.y,dir.z,0,1,0);
+            listener.setOrientation(dir.x, dir.y, dir.z, 0, 1, 0);
             // listener.forwardX.value = dir.x;
             // listener.forwardY.value = dir.y;
             // listener.forwardZ.value = dir.z;
@@ -513,6 +489,10 @@
             if (outdoorLowpassNode && outdoorGainNode) {
                 outdoorGainNode.gain.value = mapRange(0, 1, 0.5, 0.1, insideness);
                 outdoorLowpassNode.frequency.value = mapRange(0, 1, 12000, 2800, insideness);
+            }
+
+            if (gramophoneLowpassNode) {
+                gramophoneLowpassNode.frequency.value = mapRange(0, 1, 12000, 800, 1 - insideness);
             }
             // console.log(worldPos);
             render(dt);

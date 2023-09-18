@@ -1,6 +1,6 @@
 ﻿namespace gallery.shared;
 
-public class Artwork
+public abstract class Submission
 {
     public string? Name { get; set; }
     public string? Author { get; set; }

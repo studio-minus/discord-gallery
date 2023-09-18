@@ -5,13 +5,13 @@ using System.Collections.Concurrent;
 
 namespace gallery.front;
 
-public class ArtCache
+public class ImageArtCache
 {
     public IArtRenderer? Renderer;
 
     private readonly ConcurrentDictionary<ArtRequest, Image<Rgba32>> cache = new();
 
-    public ArtCache(IArtRenderer renderer)
+    public ImageArtCache(IArtRenderer renderer)
     {
         Renderer = renderer;
     }
@@ -35,7 +35,7 @@ public class ArtCache
         public static bool operator !=(ArtRequest left, ArtRequest right) => !(left == right);
     }
 
-    public async Task<Image<Rgba32>> Load(int w, int h, Artwork work)
+    public async Task<Image<Rgba32>> Load(int w, int h, Submission work)
     {
         if (Renderer == null)
             throw new Exception($"{nameof(Renderer)} is unassigned");

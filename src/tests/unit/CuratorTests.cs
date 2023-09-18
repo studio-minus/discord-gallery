@@ -10,7 +10,7 @@ public class CuratorTests
     public void Clean()
     {
         const int amount = 15;
-        var reference = new List<ArtworkReference>();
+        var reference = new List<SubmissionReference>();
         var path = Path.GetTempFileName();
         {
             using var curator = new Curator(path);
@@ -18,7 +18,7 @@ public class CuratorTests
 
             for (int i = 0; i < amount; i++)
             {
-                var art = new ArtworkReference(
+                var art = new ImageSubmissionReference(
                     (ulong)Random.Shared.NextInt64(),
                     Guid.NewGuid().ToString(),
                     $"https://i.imgur.com/{Random.Shared.Next(10000, 99999)}.jpg");
@@ -39,7 +39,7 @@ public class CuratorTests
             Assert.AreEqual(curator.Count, amount, "Loaded curator should already have art");
             var top = reference[amount / 3];
 
-            var best = curator.GetBestArtwork(5);
+            var best = curator.GetBestImageArt(5);
             Assert.AreEqual(top.ImageUrl, best.First().ImageData, "Top art does not match");
         }
     }
@@ -78,7 +78,7 @@ public class CuratorTests
     {
         var path = Path.GetTempFileName();
         var curator = new Curator(path);
-        var artwork = new ArtworkReference
+        var artwork = new ImageSubmissionReference
         {
             Name = "Test Artwork",
             Author = "Test Author",
@@ -93,7 +93,7 @@ public class CuratorTests
     {
         var path = Path.GetTempFileName();
         var curator = new Curator(path);
-        var artwork = new ArtworkReference
+        var artwork = new ImageSubmissionReference
         {
             Name = "Test Artwork",
             Author = "Test Author",
@@ -110,7 +110,7 @@ public class CuratorTests
     {
         var path = Path.GetTempFileName();
         var curator = new Curator(path);
-        var artwork = new ArtworkReference
+        var artwork = new ImageSubmissionReference
         {
             Name = "Test Artwork",
             Author = "Test Author",
@@ -126,7 +126,7 @@ public class CuratorTests
     {
         var path = Path.GetTempFileName();
         var curator = new Curator(path);
-        var artwork = new ArtworkReference
+        var artwork = new ImageSubmissionReference
         {
             Name = "Test Artwork",
             Author = "Test Author",

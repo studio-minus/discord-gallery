@@ -51,23 +51,27 @@ public class AuctionArtRenderer : IArtRenderer
             var rect = new Rectangle(width / 2 - rectSize.x / 2, height - 10 - rectSize.y, rectSize.x, rectSize.y);
             i.Draw(Color.Black, 2, rect);
             i.Fill(Color.White, rect);
-            i.DrawText(new TextOptions(titleFont)
+
+            // draw title
+            i.DrawText(new RichTextOptions(titleFont)
             {
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Top,
-                WrappingLength = rectSize.x,
+                WrappingLength = -1,
                 Origin = new PointF((rect.Left + rect.Right) / 2, rect.Top + 2)
             }, title, Color.Black);
 
-            i.DrawText(new TextOptions(descriptionFont)
+            // draw author
+            i.DrawText(new RichTextOptions(descriptionFont)
             {
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Bottom,
-                WrappingLength = rectSize.x,
+                WrappingLength = -1,
                 Origin = new PointF((rect.Left + rect.Right) / 2, rect.Bottom + 5)
             }, author, Color.Black.WithAlpha(0.8f));
 
-            i.DrawText(new TextOptions(descriptionFont)
+            // draw worth
+            i.DrawText(new RichTextOptions(descriptionFont)
             {
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Bottom,

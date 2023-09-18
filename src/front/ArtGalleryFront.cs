@@ -1,10 +1,12 @@
 ﻿using gallery.shared;
 using HttpServerLite;
+using Newtonsoft.Json;
 using SixLabors.ImageSharp.Formats.Webp;
-using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
+using System.Data;
+using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
+using Configuration = gallery.shared.Configuration;
 using HttpMethod = HttpServerLite.HttpMethod;
 
 namespace gallery.front;
@@ -13,15 +15,21 @@ public class ArtGalleryFront : IDisposable
 {
     public readonly DirectoryInfo ArtDirectory;
 
-    private static readonly ConcurrentDictionary<string, Artwork> artworks = new();
-    private static readonly ConcurrentDictionary<(string, int, int), byte[]> imgCache = new();
-    private static readonly ArtCache artCache = new(null!);
+    private static readonly ConcurrentDictionary<string, Submission> artworks = new();
+    private static readonly ConcurrentDictionary<string, byte[]> responseCache = new();
+    private static readonly ImageArtCache imageArtCache;
+    private static readonly ImageArtCache discArtCache;
 
     private Webserver? server;
 
+    static ArtGalleryFront()
+    {
+        imageArtCache = new(new AuctionArtRenderer(Configuration.Current.ArtworkFontPath));
+        discArtCache = new(new DiscArtRenderer(Configuration.Current.DiscOverlayPath));
+    }
+
     public ArtGalleryFront(DirectoryInfo artDirectory)
     {
-        artCache.Renderer = new AuctionArtRenderer(Configuration.Current.ArtworkFontPath);
         ArtDirectory = artDirectory;
 
         RefreshArtDirectory();
@@ -30,23 +38,36 @@ public class ArtGalleryFront : IDisposable
     public void ClearCache()
     {
         artworks.Clear();
-        imgCache.Clear();
-        artCache.Clear();
+        responseCache.Clear();
+        imageArtCache.Clear();
     }
 
     public void RefreshArtDirectory()
     {
         ClearCache();
 
-        var found = new List<Artwork>();
+        var found = new List<Submission>();
         foreach (var item in ArtDirectory.EnumerateFiles("*.json"))
         {
             Console.WriteLine("Art found: {0}", Path.GetFileNameWithoutExtension(item.Name));
             try
             {
-                var artwork = JsonSerializer.Deserialize<Artwork>(File.ReadAllText(item.FullName));
+                var artwork = JsonConvert.DeserializeObject(File.ReadAllText(item.FullName), JsonInstances.Settings);
                 if (artwork != null)
-                    found.Add(artwork);
+                {
+                    switch (artwork)
+                    {
+                        case ImageSubmission img:
+                            found.Add(img);
+                            break;
+                        case CompositionSubmission comp:
+                            found.Add(comp);
+                            break;
+                        default:
+                            Console.Error.WriteLine("Failed to read art because it is of an unknown type");
+                            break;
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -109,6 +130,47 @@ public class ArtGalleryFront : IDisposable
         await ctx.Response.SendAsync(sb.ToString());
     }
 
+    [StaticRoute(HttpMethod.GET, "/art/images")]
+    public static async Task GetAllArtImages(HttpContext ctx)
+    {
+        var sb = new StringBuilder();
+        sb.Append('[');
+        int c = 0;
+        var dd = artworks.Where(d => d.Value is ImageSubmission).OrderBy(static d => d.Value.Score);
+
+        foreach (var item in dd)
+        {
+            if (item.Value is ImageSubmission)
+            {
+                sb.AppendFormat("\"{0}\"", item.Key);
+                if (++c != dd.Count())
+                    sb.Append(", ");
+            }
+        }
+        sb.Append(']');
+        await ctx.Response.SendAsync(sb.ToString());
+    }
+     
+    [StaticRoute(HttpMethod.GET, "/art/musicdisc")]
+    public static async Task GetMusicDisc(HttpContext ctx)
+    {
+        var artwork = artworks.Where(d => d.Value is CompositionSubmission).FirstOrDefault();
+        ctx.Response.ContentType = "application/json";
+        if (artwork.Value == null)
+        {
+            await ctx.Response.SendAsync("{}");
+            return;
+        }
+
+        var obj = new
+        {
+            AudioData = $"/art/{artwork.Key}/audio",
+            ImageData= $"/art/{artwork.Key}/image/128/128"
+        };
+        
+        await ctx.Response.SendAsync(JsonConvert.SerializeObject(obj));
+    }
+
     [ParameterRoute(HttpMethod.GET, "/art/{id}/image/{w}/{h}")]
     public static async Task GetArtImage(HttpContext ctx)
     {
@@ -122,29 +184,54 @@ public class ArtGalleryFront : IDisposable
         byte[]? b;
         if (artworks.TryGetValue(id, out var artwork))
         {
-            if (!imgCache.TryGetValue((id, w, h), out b))
+            var cache = artwork is CompositionSubmission ? discArtCache : imageArtCache;
+
+            if (!responseCache.TryGetValue(ctx.Request.Url.Full, out b))
             {
-                var img = await artCache.Load(w, h, artwork);
+                var img = await cache.Load(w, h, artwork);
                 using var m = new MemoryStream();
                 img.Save(m, new WebpEncoder() { Quality = 95 });
                 b = m.ToArray();
-                if (!imgCache.TryAdd((id, w, h), b))
+                if (!responseCache.TryAdd(ctx.Request.Url.Full, b))
                     Console.Error.WriteLine("Failed to cache artwork {0}", id);
             }
-            ctx.Response.ContentType = "image/webp";
-            await ctx.Response.SendAsync(b);
         }
-        else if (!imgCache.TryGetValue(default, out b)) //not found, send wtf img
+        else if (!responseCache.TryGetValue(ctx.Request.Url.Full, out b)) //not found, send wtf img
         {
             using var m = new MemoryStream();
             var img = SixLabors.ImageSharp.Image.Load<Rgba32>("error.png");
             img.Save(m, new WebpEncoder() { Quality = 100 });
             b = m.ToArray();
-            if (!imgCache.TryAdd(default, b))
+            if (!responseCache.TryAdd(ctx.Request.Url.Full, b))
                 Console.Error.WriteLine("Failed to cache artwork {0}", id);
         }
 
         ctx.Response.ContentType = "image/webp";
+        await ctx.Response.SendAsync(b);
+    }
+
+    [ParameterRoute(HttpMethod.GET, "/art/{id}/audio")]
+    public static async Task GetArtAudio(HttpContext ctx)
+    {
+        var id = ctx.Request.Url.Parameters["id"];
+
+        byte[]? b;
+        if (artworks.TryGetValue(id, out var artwork) && artwork is CompositionSubmission comp)
+        {
+            if (!responseCache.TryGetValue(ctx.Request.Url.Full, out b))
+            {
+                using var r = new HttpClient();
+                var response = await r.GetAsync(comp.AudioData);
+                var mime = response.Content.Headers.ContentType ?? MediaTypeHeaderValue.Parse("audio/mp3");
+                b = await response.Content.ReadAsByteArrayAsync();
+                ctx.Response.ContentType = mime.ToString();
+            }
+        }
+        else if (!responseCache.TryGetValue(ctx.Request.Url.Full, out b)) //not found, send wtf sound
+        {
+            ctx.Response.ContentType = "audio/ogg";
+        }
+
         await ctx.Response.SendAsync(b);
     }
 
@@ -154,14 +241,35 @@ public class ArtGalleryFront : IDisposable
         var id = ctx.Request.Url.Parameters["id"];
         if (artworks.TryGetValue(id, out var artwork))
         {
-            await ctx.Response.SendAsync(JsonSerializer.Serialize(new
+            object an;
+
+            switch (artwork)
             {
-                artwork.Name,
-                artwork.Author,
-                artwork.Description,
-                artwork.Score,
-                Src = $"art/{id}/image/512/512"
-            }));
+                case CompositionSubmission comp:
+                    an = new
+                    {
+                        artwork.Name,
+                        artwork.Author,
+                        artwork.Description,
+                        artwork.Score,
+                        Audio = "art/{id}/audio",
+                        Src = $"art/{id}/image/128/128"
+                    };
+                    break;
+                default:
+                    an = new
+                    {
+                        artwork.Name,
+                        artwork.Author,
+                        artwork.Description,
+                        artwork.Score,
+                        Src = $"art/{id}/image/512/512"
+                    };
+                    break;
+            }
+
+            await ctx.Response.SendAsync(JsonConvert.SerializeObject(an));
+            return;
         }
 
         ctx.Response.StatusCode = 404;
@@ -172,12 +280,13 @@ public class ArtGalleryFront : IDisposable
     public static async Task Index(HttpContext ctx)
     {
         ctx.Response.ContentType = "text/html";
-        await ctx.Response.SendAsync(File.ReadAllBytes("www/index.html"));
+        var str = await File.ReadAllBytesAsync("www/index.html");
+        await ctx.Response.SendAsync(str);
     }
 
     public void Dispose()
     {
-        server.Dispose();
+        server?.Dispose();
     }
 
     public class UploadArtwork

@@ -13,10 +13,10 @@ public class ArtCacheTests
     {
         // create a new instance of the ArtCache class with a mock art renderer.
         var renderer = new Mock<IArtRenderer>();
-        var cache = new ArtCache(renderer.Object);
+        var cache = new ImageArtCache(renderer.Object);
 
         // loading an artwork
-        var artwork = new Artwork { ImageData = "data:..." };
+        var artwork = new ImageSubmission { ImageData = "data:..." };
         var result = cache.Load(100, 100, artwork);
         Assert.IsNotNull(result);
 
@@ -28,8 +28,8 @@ public class ArtCacheTests
     [TestMethod]
     public void NullRenderer()
     {
-        var artwork = new Artwork { ImageData = "data:..." };
-        var cache = new ArtCache(null);
+        var artwork = new ImageSubmission { ImageData = "data:..." };
+        var cache = new ImageArtCache(null);
         Assert.ThrowsExceptionAsync<Exception>(async () => await cache.Load(100, 100, artwork));
     }
 }

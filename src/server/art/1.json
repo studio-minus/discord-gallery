@@ -1,4 +1,5 @@
 {
+  "$type": "gallery.shared.ImageSubmission, shared",
   "Name": "Geoff",
   "Author": "Jeremy Clarkson",
   "Description": "An electric vehicle. The peak of human ingenuity.",

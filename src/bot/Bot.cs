@@ -1,7 +1,7 @@
 ﻿using Discord.WebSocket;
 using Discord;
 using gallery.shared;
-using System.Text;
+using System.Xml.Linq;
 
 namespace gallery.bot;
 
@@ -35,11 +35,25 @@ public class Bot : IDisposable
         "🎪Come one, come all, and see the incredible art I have in store at the Community Art Gallery! " +
         "I have put together a magnificent exhibition of {0} magnificent masterpieces that you won't want to miss. " +
         "Don't miss the chance to witness art of unparalleled beauty and grandeur - it's here for one week! 🎪",
+
+        "🎪 Attention, attention! Marvel at {0} breathtaking works of art at the Community Art Gallery! Just one week to witness these visual wonders! 🎪",
+
+        "🎪 Step right up, folks! {0} masterpieces are on display at the Community Art Gallery! Seize this opportunity before the week is out! 🎪",
+
+        "🎪 Gather round, art enthusiasts! {0} extraordinary exhibits are showcased at the Community Art Gallery! Hurry, they're only around for one week! 🎪",
+
+        "🎪 Hear the call, ladies and gents! {0} stunning creations await at the Community Art Gallery! Be quick, they're only in town for a week! 🎪",
+
+        "🎪 Listen up, everyone! {0} fantastic pieces of art are making a splash at the Community Art Gallery! Don't miss out, they're only here for one week! 🎪",
+
+        "🎪 Don't miss this, folks! {0} captivating masterpieces are taking the spotlight at the Community Art Gallery! Time's ticking, they're only here for a week! 🎪",
+
+        "🎪 All eyes here, art lovers! {0} awe-inspiring exhibits are making their debut at the Community Art Gallery! Catch them before they're gone in a week! 🎪",
     };
 
     private static readonly Func<string, bool>[] contentTypeFilters =
     {
-        s => s.StartsWith("image/", StringComparison.InvariantCultureIgnoreCase), //has to be an image
+        s => s.StartsWith("image/", StringComparison.InvariantCultureIgnoreCase) || s.StartsWith("audio/", StringComparison.InvariantCultureIgnoreCase), //has to be an image or audio
         s => !s.Contains("gif", StringComparison.InvariantCultureIgnoreCase), // disallow gifs
         s => !s.Contains("apng", StringComparison.InvariantCultureIgnoreCase), // disallow animated pngs
     };
@@ -101,10 +115,21 @@ public class Bot : IDisposable
 
         foreach (var attachment in msg.Attachments)
             if (contentTypeFilters.All(filter => filter(attachment.ContentType)))
-                Curator.Add(new ArtworkReference(msg.Id, msg.Author.Username, attachment.Url)
-                {
-                    Name = string.IsNullOrWhiteSpace(msg.Content) ? null : msg.Content
-                });
+            {
+                if (attachment.Size > 8_000_000) // skip files greater than 8 MB
+                    continue;
+
+                SubmissionReference artwork;
+                
+                // TODO this is not very expandable and this and .contentTypeFilters should rely on the same values
+                if (attachment.ContentType.StartsWith("audio", StringComparison.InvariantCultureIgnoreCase)) // WebP required: the server serves the artwork images as webp and doesnt expect anything else
+                    artwork = new CompositionReference(msg.Id, msg.Author.Username, msg.Author.GetAvatarUrl(ImageFormat.WebP), attachment.Url);
+                else
+                    artwork = new ImageSubmissionReference(msg.Id, msg.Author.Username, attachment.Url);
+
+                artwork.Name = string.IsNullOrWhiteSpace(msg.Content) ? null : msg.Content;
+                Curator.Add(artwork);
+            }
 
         return Task.CompletedTask;
     }
@@ -162,9 +187,9 @@ public class Bot : IDisposable
         await client.StopAsync();
     }
 
-    public async Task SendPublishMessage(Artwork[] best)
+    public async Task SendPublishMessage(Exhibition exhibition)
     {
-        var message = string.Format(PublishMessages[Random.Shared.Next(0, PublishMessages.Length)], best.Length) + "\n\nhttps://gallery.studiominus.nl/";
+        var message = string.Format(PublishMessages[Random.Shared.Next(0, PublishMessages.Length)], exhibition.Images.Length) + "\n\nhttps://gallery.studiominus.nl/";
         var channel = await client.GetChannelAsync(channelId);
         if (channel is ITextChannel txt)
             await txt.SendMessageAsync(message);

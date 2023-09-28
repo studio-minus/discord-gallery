@@ -122,8 +122,8 @@ public class Bot : IDisposable
                 SubmissionReference artwork;
                 
                 // TODO this is not very expandable and this and .contentTypeFilters should rely on the same values
-                if (attachment.ContentType.StartsWith("audio", StringComparison.InvariantCultureIgnoreCase)) // WebP required: the server serves the artwork images as webp and doesnt expect anything else
-                    artwork = new CompositionReference(msg.Id, msg.Author.Username, msg.Author.GetAvatarUrl(ImageFormat.WebP), attachment.Url);
+                if (attachment.ContentType.StartsWith("audio", StringComparison.InvariantCultureIgnoreCase)) 
+                    artwork = new CompositionReference(msg.Id, msg.Author.Username, msg.Author.GetAvatarUrl(), attachment.Url);
                 else
                     artwork = new ImageSubmissionReference(msg.Id, msg.Author.Username, attachment.Url);
 

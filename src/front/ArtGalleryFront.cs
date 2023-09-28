@@ -24,8 +24,8 @@ public class ArtGalleryFront : IDisposable
 
     static ArtGalleryFront()
     {
-        imageArtCache = new(new AuctionArtRenderer(Configuration.Current.ArtworkFontPath));
-        discArtCache = new(new DiscArtRenderer(Configuration.Current.DiscOverlayPath));
+        imageArtCache = new ImageArtCache(new AuctionArtRenderer(Configuration.Current.ArtworkFontPath));
+        discArtCache = new ImageArtCache(new DiscArtRenderer(Configuration.Current.DiscOverlayPath));
     }
 
     public ArtGalleryFront(DirectoryInfo artDirectory)
@@ -174,9 +174,9 @@ public class ArtGalleryFront : IDisposable
     [ParameterRoute(HttpMethod.GET, "/art/{id}/image/{w}/{h}")]
     public static async Task GetArtImage(HttpContext ctx)
     {
-        var id = ctx.Request.Url.Parameters["id"];
-        int w = int.Parse(ctx.Request.Url.Parameters["w"]);
-        int h = int.Parse(ctx.Request.Url.Parameters["h"]);
+        var id = ctx.Request.Url.Parameters["id"] ?? throw new Exception("id parameter missing");
+        int w = int.Parse(ctx.Request.Url.Parameters["w"] ?? "128");
+        int h = int.Parse(ctx.Request.Url.Parameters["h"] ?? "128");
 
         w = Math.Min(1024, Math.Max(128, w));
         h = Math.Min(1024, Math.Max(128, h));

@@ -61,11 +61,11 @@ async function initaliseAudio() {
     lamps.start();
 
 
-    const lamp1 = await createPointSpeaker('sfx/lamp.wav', 5.8, 0, 16.6, 7, 5);
+    const lamp1 = await createPointSpeaker('sfx/lamp.wav', 5.8, 0, 16.6, 7, 8);
     lamp1.loop = true;
     lamp1.start();
 
-    const lamp2 = await createPointSpeaker('sfx/lamp.wav', -5.8, 0, 16.6, 7, 5);
+    const lamp2 = await createPointSpeaker('sfx/lamp.wav', -5.8, 0, 16.6, 7, 8);
     lamp2.loop = true;
     lamp2.start();
 
@@ -78,7 +78,7 @@ async function initaliseAudio() {
     gramophoneLowpassNode = new BiquadFilterNode(audioCtx);
     gramophoneLowpassNode.type = 'lowpass';
     gramophoneLowpassNode.frequency.value = 1500;
-    const gramophoneSourcePanner = setAudioPosition(gramophoneSource, -4.53, 1.5, 5.422, 2, 5);
+    const gramophoneSourcePanner = setAudioPosition(gramophoneSource, -4.53, 1.5, 5.422, 1, 25);
     gramophoneSourcePanner.connect(gramophoneLowpassNode).connect(gramophoneReverb).connect(audioCtx.destination);
     // gramophoneAudioElem.play();
 }

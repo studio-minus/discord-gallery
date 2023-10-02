@@ -1,13 +1,13 @@
 ﻿using gallery.shared;
-using HttpServerLite;
 using Newtonsoft.Json;
 using SixLabors.ImageSharp.Formats.Webp;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Net.Http.Headers;
 using System.Text;
+using WatsonWebserver;
 using Configuration = gallery.shared.Configuration;
-using HttpMethod = HttpServerLite.HttpMethod;
+using HttpMethod = WatsonWebserver.HttpMethod;
 
 namespace gallery.front;
 
@@ -20,7 +20,7 @@ public class ArtGalleryFront : IDisposable
     private static readonly ImageArtCache imageArtCache;
     private static readonly ImageArtCache discArtCache;
 
-    private Webserver? server;
+    private Server? server;
 
     static ArtGalleryFront()
     {
@@ -83,30 +83,21 @@ public class ArtGalleryFront : IDisposable
     {
         server?.Dispose();
 
-        if (Configuration.Current.SslCert == null)
-            server = new Webserver(Configuration.Current.Ip, Configuration.Current.Port, Index);
-        else
-        {
-            server = new Webserver(Configuration.Current.Ip, Configuration.Current.Port, Index,
-                new System.Security.Cryptography.X509Certificates.X509Certificate2(Configuration.Current.SslCert, Configuration.Current.SslCertPassword));
-            //server = new Webserver(Configuration.Current.Ip, Configuration.Current.Port, true, 
-            //                       Configuration.Current.SslCert, Configuration.Current.SslCertPassword, Index);
-        }
+            server = new WatsonWebserver.Server(Configuration.Current.Ip, Configuration.Current.Port, false, Index);
 
         server.Settings.Debug.Responses = true;
         server.Settings.Debug.Routing = true;
-        server.Settings.Headers.Host = "https://" + server.Settings.Hostname + ":" + server.Settings.Port;
-        server.Settings.Ssl.AcceptInvalidAcertificates = true;
+        //server.Settings.Headers.Add("Host", "https://" + Configuration.Current.Ip + ":" + Configuration.Current.Port);
 
         server.Events.Logger = Console.WriteLine;
-        server.Events.Exception += (o, e) =>
+        server.Events.ExceptionEncountered += (o, e) =>
         {
             Console.Error.WriteLine("{0}: {1}", e.Url, e.Exception.Message);
         };
         server.Routes.Content.Add(Configuration.Current.FrontPath, true);
         server.Start();
 
-        Console.WriteLine("Listening on {0}:{1} ", server.Settings.Hostname, server.Settings.Port);
+        Console.WriteLine("Listening on {0}:{1} ", Configuration.Current.Ip, Configuration.Current.Port);
     }
 
     public void StopServer()
@@ -127,7 +118,7 @@ public class ArtGalleryFront : IDisposable
                 sb.Append(", ");
         }
         sb.Append(']');
-        await ctx.Response.SendAsync(sb.ToString());
+        await ctx.Response.Send(sb.ToString());
     }
 
     [StaticRoute(HttpMethod.GET, "/art/images")]
@@ -148,7 +139,7 @@ public class ArtGalleryFront : IDisposable
             }
         }
         sb.Append(']');
-        await ctx.Response.SendAsync(sb.ToString());
+        await ctx.Response.Send(sb.ToString());
     }
      
     [StaticRoute(HttpMethod.GET, "/art/musicdisc")]
@@ -158,7 +149,7 @@ public class ArtGalleryFront : IDisposable
         ctx.Response.ContentType = "application/json";
         if (artwork.Value == null)
         {
-            await ctx.Response.SendAsync("{}");
+            await ctx.Response.Send("{}");
             return;
         }
 
@@ -168,7 +159,7 @@ public class ArtGalleryFront : IDisposable
             ImageData= $"/art/{artwork.Key}/image/128/128"
         };
         
-        await ctx.Response.SendAsync(JsonConvert.SerializeObject(obj));
+        await ctx.Response.Send(JsonConvert.SerializeObject(obj));
     }
 
     [ParameterRoute(HttpMethod.GET, "/art/{id}/image/{w}/{h}")]
@@ -207,7 +198,7 @@ public class ArtGalleryFront : IDisposable
         }
 
         ctx.Response.ContentType = "image/webp";
-        await ctx.Response.SendAsync(b);
+        await ctx.Response.Send(b);
     }
 
     [ParameterRoute(HttpMethod.GET, "/art/{id}/audio")]
@@ -232,7 +223,7 @@ public class ArtGalleryFront : IDisposable
             ctx.Response.ContentType = "audio/ogg";
         }
 
-        await ctx.Response.SendAsync(b);
+        await ctx.Response.Send(b);
     }
 
     [ParameterRoute(HttpMethod.GET, "/art/{id}")]
@@ -268,12 +259,12 @@ public class ArtGalleryFront : IDisposable
                     break;
             }
 
-            await ctx.Response.SendAsync(JsonConvert.SerializeObject(an));
+            await ctx.Response.Send(JsonConvert.SerializeObject(an));
             return;
         }
 
         ctx.Response.StatusCode = 404;
-        await ctx.Response.SendAsync("Artwork not found");
+        await ctx.Response.Send("Artwork not found");
     }
 
     [StaticRoute(HttpMethod.GET, "/")]
@@ -281,7 +272,7 @@ public class ArtGalleryFront : IDisposable
     {
         ctx.Response.ContentType = "text/html";
         var str = await File.ReadAllBytesAsync("www/index.html");
-        await ctx.Response.SendAsync(str);
+        await ctx.Response.Send(str);
     }
 
     public void Dispose()

@@ -9,12 +9,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="HttpServerLite" Version="2.1.4" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="shortid" Version="4.0.0" />
 		<PackageReference Include="SixLabors.Fonts" Version="2.0.0" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
 		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.0.0" />
+		<PackageReference Include="Watson" Version="5.1.2" />
 	</ItemGroup>
 
 	<ItemGroup>

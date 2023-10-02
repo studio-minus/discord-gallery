@@ -17,8 +17,8 @@ public class Configuration : IEquatable<Configuration?>
     public string Ip { get; set; } = "127.0.0.1";
     public int Port { get; set; } = 8080;
 
-    public string? SslCert { get; set; } = null;
-    public string? SslCertPassword { get; set; } = null;
+    //public string? SslCert { get; set; } = null;
+    //public string? SslCertPassword { get; set; } = null;
      
     public static Configuration Current = new();
 
@@ -52,9 +52,9 @@ public class Configuration : IEquatable<Configuration?>
                ChannelId == other.ChannelId &&
                GuildId == other.GuildId &&
                Ip == other.Ip &&
-               Port == other.Port &&
-               SslCert == other.SslCert &&
-               SslCertPassword == other.SslCertPassword;
+               Port == other.Port;
+               //SslCert == other.SslCert &&
+               //SslCertPassword == other.SslCertPassword;
     }
 
     public override int GetHashCode()
@@ -68,8 +68,8 @@ public class Configuration : IEquatable<Configuration?>
         hash.Add(GuildId);
         hash.Add(Ip);
         hash.Add(Port);
-        hash.Add(SslCert);
-        hash.Add(SslCertPassword);
+        //hash.Add(SslCert);
+        //hash.Add(SslCertPassword);
         return hash.ToHashCode();
     }
 

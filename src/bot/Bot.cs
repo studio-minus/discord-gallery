@@ -97,10 +97,10 @@ public class Bot : IDisposable
         return Task.CompletedTask;
     }
 
-    private Task OnMessageReceived(SocketMessage msg)
+    private async Task OnMessageReceived(SocketMessage msg)
     {
         if (!Curator.Enabled || msg.Channel.Id != channelId)
-            return Task.CompletedTask;
+            return;
 
         // Ik hoef hier toch niet the checken voor guild ID omdat channel IDs universeel zijn
 
@@ -122,8 +122,15 @@ public class Bot : IDisposable
                 SubmissionReference artwork;
                 
                 // TODO this is not very expandable and this and .contentTypeFilters should rely on the same values
-                if (attachment.ContentType.StartsWith("audio", StringComparison.InvariantCultureIgnoreCase)) 
-                    artwork = new CompositionReference(msg.Id, msg.Author.Username, msg.Author.GetAvatarUrl(), attachment.Url);
+                if (attachment.ContentType.StartsWith("audio", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    using HttpClient downloader = new();
+                    var img = await downloader.GetAsync(msg.Author.GetAvatarUrl() ?? msg.Author.GetDefaultAvatarUrl());
+                    var b64 = Convert.ToBase64String(await img.Content.ReadAsByteArrayAsync());
+                    var dataString = $"data:{(img.Content.Headers.ContentType?.ToString() ?? "image/webp")};base64," + b64;
+                    artwork = new CompositionReference(msg.Id, msg.Author.Username, dataString, attachment.Url);
+                    downloader.Dispose();
+                }
                 else
                     artwork = new ImageSubmissionReference(msg.Id, msg.Author.Username, attachment.Url);
 
@@ -131,7 +138,7 @@ public class Bot : IDisposable
                 Curator.Add(artwork);
             }
 
-        return Task.CompletedTask;
+        return;
     }
 
     private Task OnMessageDeleted(Cacheable<IMessage, ulong> msg, Cacheable<IMessageChannel, ulong> channel)

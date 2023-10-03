@@ -136,7 +136,8 @@
         let circusMesh;
 
         const renderer = new THREE.WebGLRenderer();
-        renderer.toneMappingExposure = 0.3;
+        renderer.toneMapping  = THREE.LinearToneMapping ;
+        renderer.toneMappingExposure = 0.8;
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.antialias = true;
         renderer.setSize(window.innerWidth * renderScale, window.innerHeight * renderScale);
@@ -340,8 +341,7 @@
             previousMousePos.x = mousePos.x;
             previousMousePos.y = mousePos.y;
 
-            if (circusMesh && circusMesh.morphTargetInfluences)
-            {
+            if (circusMesh && circusMesh.morphTargetInfluences) {
                 let t = clock.elapsedTime * 1.5;
                 circusMesh.morphTargetInfluences[0] = noise2D(t, -5.236) * 5;
                 circusMesh.morphTargetInfluences[1] = noise2D(t, 12.53) / 2;
@@ -512,7 +512,7 @@
                     cloth.addEventListener('ended', () => cloth.disconnect());
                 }
 
-                if (Math.random() > 0.99 && worldPos.length() > 40) {
+                if (Math.random() > 0.995 && worldPos.length() > 40) {
                     const w = await createPointSpeaker("sfx/running.wav",
                         player.position.x + randomRange(-10, 10), 1, player.position.z + randomRange(-10, 10), 1, 15);
                     w.start();
@@ -566,6 +566,11 @@
 
             listener.setPosition(worldPos.x, worldPos.y, worldPos.z);
             listener.setOrientation(dir.x, dir.y, dir.z, 0, 1, 0);
+            let rads = worldPos.distanceTo(new THREE.Vector3(43,playerHeight,18)) / 15;
+            if (Math.random() > Math.pow(rads, 0.25))
+            {
+                playOneShotAmbience(pickRandom(sounds.clicks), 0.2);
+            }
 
             if (outdoorLowpassNode && outdoorGainNode) {
                 outdoorGainNode.gain.value = mapRange(0, 1, 0.3, 0.05, insideness);

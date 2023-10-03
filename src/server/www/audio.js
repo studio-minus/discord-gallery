@@ -43,7 +43,8 @@ const sounds = {
     distantFriend: "sfx/distant.ogg",
     peopleTalking: "sfx/people-talking.ogg",
     wilJeNietHoren: "sfx/ditwiljenooithoren.mp3",
-    birds: genRange(12).map(i => `sfx/birds/birds-${i}.ogg`)
+    birds: genRange(12).map(i => `sfx/birds/birds-${i}.ogg`),
+    clicks: genRange(8).map(i => `sfx/geiger/click-0${i+1}.ogg`)
 };
 
 async function initaliseAudio() {
@@ -60,6 +61,7 @@ async function initaliseAudio() {
     outdoorLowpassNode.connect(outdoorGainNode).connect(audioCtx.destination)
 
     let outdoorSound = await createAmbientSpeaker(sounds.outdoorAmbience);
+    outdoorSound.connect(outdoorLowpassNode);
     outdoorSound.start();
 
     const lamps = await createPointSpeaker('sfx/lamp.wav', 0, 9, 0, 2, 30);
@@ -118,10 +120,13 @@ function playOneShotPoint(audioPath, x, y, z, rolloffFactor = 2, maxDistance = 1
     a().then(() => {});
 }
 
-function playOneShotAmbience(file){
+function playOneShotAmbience(file, gain = 1){
     async function a() {
         const s = await createAmbientSpeaker(file);
         s.loop = false;
+        const gainNode = new GainNode(audioCtx);
+        gainNode.gain.value = gain;
+        s.connect(gainNode).connect(audioCtx.destination);
         s.start();
         s.addEventListener('ended', () => s.disconnect());
     }
@@ -148,6 +153,5 @@ async function createAmbientSpeaker(audioPath) {
     const source = audioCtx.createBufferSource();
     source.buffer = await loadAudio(audioPath);
     source.loop = true;
-    source.connect(outdoorLowpassNode);
     return source;
 }

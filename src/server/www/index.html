@@ -165,7 +165,7 @@
 
             setTimeout(async () => {
                 meshLoader.load('TentScene.glb', async (gltf) => {
-
+					showSkyFriend |= (keyStates['KeyU'] && keyStates['KeyP'] && keyStates['KeyL']);
                     function setBasicMaterial(obj) {
                         if (obj.isMesh && obj.material && obj.geometry) {
                             let original = obj.material;

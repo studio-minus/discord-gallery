@@ -54,10 +54,12 @@
 </head>
 
 <body>
-    <div class="loaded overlay">
+    <div class="loaded overlay" style="user-select: none;">
         <span><span class="key">[Hold mouse button]</span>Look around</span>
         <span><span class="key">[WASD]</span>Move</span>
         <span><span class="key">[SPACE]</span>Zoom</span>
+        <span style="position: absolute; left: 1em; font-family: monospace; opacity: 0.2">v1.42 🎪 Studio Minus</span>
+        <span style="position: absolute; right: 1em; font-family: monospace; opacity: 0.5; cursor: pointer" id="sound-toggle">🔈</span>
     </div>
 
     <div class="loading"
@@ -94,6 +96,22 @@
     <script src="utils.js"></script>
     <script src="audio.js"></script>
     <script src="worldSdf.js"></script>
+
+    <script>
+        const soundButton = document.getElementById("sound-toggle");
+        soundButton.addEventListener('click', () => {
+            if (masterGain.gain.value > 0)
+            {
+                masterGain.gain.value = 0;
+                soundButton.innerText = '🔊';
+            }
+            else
+            {
+                masterGain.gain.value = 1;
+                soundButton.innerText = '🔈';
+            }
+        });
+    </script>
 
     <script type="module">
         import * as THREE from 'three';

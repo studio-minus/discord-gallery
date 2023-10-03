@@ -1,5 +1,6 @@
 let audioCtx;//= new AudioContext();
 let listener;
+let masterGain;
 
 let outdoorLowpassNode;
 let outdoorGainNode;
@@ -50,6 +51,12 @@ const sounds = {
 async function initaliseAudio() {
     audioCtx = new AudioContext();
     listener = audioCtx.listener;
+
+    masterGain = new GainNode(audioCtx);
+    masterGain.connect(audioCtx.destination);
+    masterGain.gain.value = 1;
+    
+
     gramophoneAudioElem = document.createElement('audio');
 
     outdoorLowpassNode = new BiquadFilterNode(audioCtx);
@@ -58,7 +65,7 @@ async function initaliseAudio() {
 
     outdoorGainNode = new GainNode(audioCtx);
     outdoorGainNode.gain.value = 0.5;
-    outdoorLowpassNode.connect(outdoorGainNode).connect(audioCtx.destination)
+    outdoorLowpassNode.connect(outdoorGainNode).connect(masterGain)
 
     let outdoorSound = await createAmbientSpeaker(sounds.outdoorAmbience);
     outdoorSound.connect(outdoorLowpassNode);
@@ -86,7 +93,7 @@ async function initaliseAudio() {
     gramophoneLowpassNode.type = 'lowpass';
     gramophoneLowpassNode.frequency.value = 1500;
     const gramophoneSourcePanner = setAudioPosition(gramophoneSource, -4.53, 1.5, 5.422, 1, 25, 3);
-    gramophoneSourcePanner.connect(gramophoneLowpassNode).connect(gramophoneReverb).connect(audioCtx.destination);
+    gramophoneSourcePanner.connect(gramophoneLowpassNode).connect(gramophoneReverb).connect(masterGain);
 }
 
 async function loadAudio(path) {
@@ -104,7 +111,7 @@ async function createPointSpeaker(audioPath, x, y, z, rolloffFactor = 2, maxDist
     source.buffer = await loadAudio(audioPath);
     const panner = setAudioPosition(source, x, y, z, rolloffFactor, maxDistance, refDistance);
     if (autoConnect)
-        panner.connect(audioCtx.destination);
+        panner.connect(masterGain);
 
     return source;
 }
@@ -126,7 +133,7 @@ function playOneShotAmbience(file, gain = 1){
         s.loop = false;
         const gainNode = new GainNode(audioCtx);
         gainNode.gain.value = gain;
-        s.connect(gainNode).connect(audioCtx.destination);
+        s.connect(gainNode).connect(masterGain);
         s.start();
         s.addEventListener('ended', () => s.disconnect());
     }

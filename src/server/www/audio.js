@@ -36,6 +36,7 @@ const sounds = {
         "sfx/cloth-03.wav",
     ],
     outdoorAmbience: "sfx/night.ogg",
+    distantFriend: "sfx/distant.ogg",
     peopleTalking: "sfx/people-talking.ogg",
     wilJeNietHoren: "sfx/ditwiljenooithoren.mp3",
 };
@@ -60,7 +61,6 @@ async function initaliseAudio() {
     lamps.loop = true;
     lamps.start();
 
-
     const lamp1 = await createPointSpeaker('sfx/lamp.wav', 5.8, 0, 16.6, 7, 8);
     lamp1.loop = true;
     lamp1.start();
@@ -78,9 +78,8 @@ async function initaliseAudio() {
     gramophoneLowpassNode = new BiquadFilterNode(audioCtx);
     gramophoneLowpassNode.type = 'lowpass';
     gramophoneLowpassNode.frequency.value = 1500;
-    const gramophoneSourcePanner = setAudioPosition(gramophoneSource, -4.53, 1.5, 5.422, 1, 25);
+    const gramophoneSourcePanner = setAudioPosition(gramophoneSource, -4.53, 1.5, 5.422, 1, 25, 3);
     gramophoneSourcePanner.connect(gramophoneLowpassNode).connect(gramophoneReverb).connect(audioCtx.destination);
-    // gramophoneAudioElem.play();
 }
 
 async function loadAudio(path) {
@@ -103,14 +102,23 @@ async function createPointSpeaker(audioPath, x, y, z, rolloffFactor = 2, maxDist
     return source;
 }
 
-function setAudioPosition(source, x, y, z, rolloffFactor = 2, maxDistance = 100) {
+function playOneShot(file){
+    async function a() {
+        const s = await createAmbientSpeaker(file);
+        s.start();
+    }
+
+    a().then(() => {});
+}
+
+function setAudioPosition(source, x, y, z, rolloffFactor = 2, maxDistance = 100, refDistance = 1) {
     const panner = new PannerNode(audioCtx, {
         panningModel: 'HRTF',
         distanceModel: 'inverse',
         positionX: x,
         positionY: y,
         positionZ: z,
-        refDistance: 1,
+        refDistance,
         maxDistance,
         rolloffFactor,
     })

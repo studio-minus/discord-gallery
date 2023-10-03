@@ -61,7 +61,7 @@
     </div>
 
     <div class="loading"
-         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
+        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
             <span style="font-weight: bold; color: #FF0061">Studio Minus</span>
             <span>Community Gallery</span>
@@ -70,7 +70,7 @@
     </div>
 
     <div class="error"
-         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
+        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
             <span style="font-weight: bold; font-size: 2em; ">ERROR</span>
             <span style="font-size: 1.5em">Everything is broken.</span>
@@ -81,11 +81,13 @@
     <script type="importmap">
         {
             "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.module.min.js",
-                "EffectComposer": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/postprocessing/EffectComposer.js",
-                "RenderPass": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/postprocessing/RenderPass.js",
-                "GLTFLoader": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/loaders/GLTFLoader.js",
-                "RGBELoader": "https://cdn.jsdelivr.net/npm/three@0.146.0/examples/jsm/loaders/RGBELoader.js"
+                "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.min.js",
+                "EffectComposer": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/postprocessing/EffectComposer.js",
+                "RenderPass": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/postprocessing/RenderPass.js",
+                "GLTFLoader": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/loaders/GLTFLoader.js",
+                "RGBELoader": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/loaders/RGBELoader.js",
+
+                "simplexNoise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/+esm"
             }
         }
     </script>
@@ -100,6 +102,7 @@
         import { RGBELoader } from 'RGBELoader';
         import { EffectComposer } from 'EffectComposer';
         import { RenderPass } from 'RenderPass';
+        import { createNoise2D } from 'simplexNoise';
 
         const movementSpeed = 1;
         const playerHeight = 1.5;
@@ -117,6 +120,11 @@
         let everythingIsLoaded = false;
         let secondCounter = 0;
         let discObject;
+        let gramophoneIsPlaying = false;
+        let shouldGramophonePlay = false;
+        let canInteractWithGramophone = false;
+        let skyfriendObj;
+        let showSkyFriend = Math.random() > 0.9995;
 
         const scene = new THREE.Scene();
         const player = new THREE.Group();
@@ -124,6 +132,7 @@
         const clock = new THREE.Clock(true);
         const meshLoader = new GLTFLoader();
         const textureLoader = new THREE.TextureLoader();
+        const noise2D = createNoise2D();
 
         const renderer = new THREE.WebGLRenderer();
         renderer.toneMappingExposure = 0.3;
@@ -202,8 +211,8 @@
                     // disc
                     discObject = gltf.scene.children.filter((m) => m.name.startsWith('Disc'))[0];
                     const discArt = await getMusicDiscArt();
-                    gramophoneAudioElem.src = discArt.AudioData || "sfx/musicless.ogg";
-                    textureLoader.load(discArt.ImageData || "https://i.imgur.com/ohoJC7u.png", img => {
+                    gramophoneAudioElem.src = discArt?.AudioData || "sfx/musicless.ogg";
+                    textureLoader.load(discArt?.ImageData || "https://i.imgur.com/ohoJC7u.png", img => {
                         img.encoding = THREE.sRGBEncoding;
                         img.flipY = false
                         discObject.material.alphaTest = 0
@@ -224,6 +233,7 @@
                             let img = await textureLoader.load(`/art/${id}/image/${w}/${h}`);
                             img.encoding = THREE.sRGBEncoding;
                             img.flipY = false;
+
                             let mat = ezels[i].material;
                             mat.alphaTest = 0.5;
                             mat.transparent = false;
@@ -234,6 +244,21 @@
                             if (i >= ezels.length)
                                 break;
                         }
+                    }).catch(e => console.error(e));
+
+                    textureLoader.load("/www/luchtvriend.png", img => {
+                        img.encoding = THREE.sRGBEncoding;
+                        const quadGeom = new THREE.PlaneGeometry(1, 1);
+                        const material = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+                        material.alphaTest = 0
+                        material.transparent = true
+                        material.color = new THREE.Color(1, 1, 1, 1)
+                        material.map = img
+                        material.needsUpdate = true
+                        skyfriendObj = new THREE.Mesh(quadGeom, material);
+                        skyfriendObj.position.set(0, 150, 0);
+                        skyfriendObj.rotation.set(90, 0, 0);
+                        scene.add(skyfriendObj);
                     });
 
                     scene.add(gltf.scene);
@@ -253,7 +278,7 @@
                         console.error(e);
                         setErrorState(e);
                     });
-                }, p => { loadProgress = (p.loaded / p.total) }, e => {
+                }, p => { loadProgress = (p.loaded / p.total); }, e => {
                     console.error(e);
                     setErrorState(e);
                 });
@@ -268,29 +293,42 @@
         }
 
         async function getArtworkIds() {
-            let response = await (await fetch('/art/images')).json();
-            return response;
+            try {
+                let response = await (await fetch('/art/images')).json();
+                return response;
+            } catch (error) {
+                return [null, null, null, null, null];
+            }
         }
 
         async function getMusicDiscArt() {
-            let musicdisc = await (await fetch('/art/musicdisc')).json();
-            if (!musicdisc)
+            try {
+                let musicdisc = await (await fetch('/art/musicdisc')).json();
+                if (!musicdisc)
+                    return null;
+                return musicdisc;
+            } catch (error) {
                 return null;
-            return musicdisc;
+            }
         }
 
         async function getArtwork(id) {
-            let artMeta = await (await fetch(`/art/${id}`)).json();
-            return artMeta;
+            try {
+                let artMeta = await (await fetch(`/art/${id}`)).json();
+                return artMeta;
+            } catch (error) {
+                return null
+            }
         }
 
         async function getArtworkImage(artwork) {
-            return textureLoader.load('/' + artwork.Src);
+            try {
+                return textureLoader.load('/' + artwork.Src);
+            } catch (error) {
+                return null;
+            }
         }
 
-        let gramophoneIsPlaying = false;
-        let shouldGramophonePlay = false;
-        let canInteractWithGramophone = false;
         function update(dt) {
             secondCounter += dt;
             let mouseDelta = { x: mousePos.x - previousMousePos.x, y: mousePos.y - previousMousePos.y };
@@ -299,7 +337,7 @@
 
             if (mouseDown) {
                 player.rotation.y += -mouseDelta.x * dt * lookSpeed;
-                camera.rotation.x = Math.max(-1, Math.min(1, camera.rotation.x - mouseDelta.y * dt * lookSpeed));
+                camera.rotation.x = Math.max(-1.3, Math.min(1.3, camera.rotation.x - mouseDelta.y * dt * lookSpeed));
             }
 
             if (discObject && gramophoneAudioElem.src) {
@@ -323,6 +361,43 @@
                     gramophoneAudioElem.play();
                 else
                     gramophoneAudioElem.pause();
+            }
+
+            if (showSkyFriend) {
+                let t = (clock.elapsedTime - 5) * 0.2;
+                const height = 150;
+                let startPos = new THREE.Vector3(500, height, 1000);
+                let midPos = new THREE.Vector3(0, height, 15);
+                let wavingPos = new THREE.Vector3(noise2D(t * 0.25, 0) * 150, height, noise2D(0, t * 0.25 - 423.534) * 150);
+                let endPos = new THREE.Vector3(100, height, 9000);
+                let state = Math.floor(t);
+                let alpha = t % 1;
+                switch (state) {
+                    default:
+                        skyfriendObj.position.lerp(startPos, 1)
+                        break;
+                    case 0:
+                        skyfriendObj.position.lerpVectors(startPos, midPos, easeOutCubic(alpha))
+                        break;
+                    case 1:
+                        skyfriendObj.position.lerpVectors(midPos, wavingPos, easeInCubic(alpha))
+                        break;
+                    case 2:
+                    case 3:
+                    case 4:
+                        skyfriendObj.position.lerp(wavingPos, 1)
+                        break;
+                    case 5:
+                        skyfriendObj.position.lerpVectors(wavingPos, endPos, easeInCubic(alpha))
+                        break;
+                }
+
+                function easeInCubic(x) {
+                    return x * x * x;
+                }
+                function easeOutCubic(x) {
+                    return 1 - Math.pow(1 - x, 3);
+                }
             }
 
             let lookVector = new THREE.Vector3(0, 0, 0);
@@ -390,8 +465,6 @@
             if (everythingIsLoaded)
                 update(dt);
 
-            // discObject.rotation.z += dt;
-
             let worldPos = new THREE.Vector3();
             camera.getWorldPosition(worldPos);
             let dir = new THREE.Vector3();
@@ -400,7 +473,6 @@
 
             if (secondCounter > 1) {
                 secondCounter = 0;
-
                 if (Math.random() > 0.9) {
                     const bear = await createPointSpeaker(
                         sounds.bear[Math.floor(Math.random() * sounds.bear.length)],
@@ -457,8 +529,6 @@
                     node.connect(crowdGainNode).connect(audioCtx.destination);
                     crowdSource.start();
                     crowdSource.loop = true;
-
-                    // console.log("ze zijn buiten");
                 }
 
                 if (crowdSource && insideness < 1) {
@@ -475,19 +545,10 @@
             }
 
             listener.setPosition(worldPos.x, worldPos.y, worldPos.z);
-            // listener.positionX.value = worldPos.x;
-            // listener.positionY.value = worldPos.y;
-            // listener.positionZ.value = worldPos.z;
             listener.setOrientation(dir.x, dir.y, dir.z, 0, 1, 0);
-            // listener.forwardX.value = dir.x;
-            // listener.forwardY.value = dir.y;
-            // listener.forwardZ.value = dir.z;
-            // listener.upX.value = 0;
-            // listener.upY.value = 1;
-            // listener.upZ.value = 0;
 
             if (outdoorLowpassNode && outdoorGainNode) {
-                outdoorGainNode.gain.value = mapRange(0, 1, 0.5, 0.1, insideness);
+                outdoorGainNode.gain.value = mapRange(0, 1, 0.3, 0.05, insideness);
                 outdoorLowpassNode.frequency.value = mapRange(0, 1, 12000, 2800, insideness);
             }
 

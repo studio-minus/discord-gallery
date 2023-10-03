@@ -136,7 +136,7 @@
         let circusMesh;
 
         const renderer = new THREE.WebGLRenderer();
-        renderer.toneMapping  = THREE.LinearToneMapping ;
+        renderer.toneMapping = THREE.LinearToneMapping;
         renderer.toneMappingExposure = 0.8;
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.antialias = true;
@@ -166,129 +166,127 @@
             player.position.y = playerHeight;
             player.position.z = 24;
 
-            setTimeout(async () => {
-                meshLoader.load('TentScene.glb', async (gltf) => {
-                    showSkyFriend |= (keyStates['KeyU'] && keyStates['KeyP'] && keyStates['KeyL']);
-                    function setBasicMaterial(obj) {
-                        if (obj.isMesh && obj.material && obj.geometry) {
-                            let original = obj.material;
-                            let map = original.emissiveMap;
+            showSkyFriend |= (keyStates['KeyU'] && keyStates['KeyP'] && keyStates['KeyL']);
+            const gltf = await meshLoader.loadAsync('TentScene.glb');
+            setBasicMaterial(gltf.scene);
+            function setBasicMaterial(obj) {
+                if (obj.isMesh && obj.material && obj.geometry) {
+                    let original = obj.material;
+                    let map = original.emissiveMap;
 
-                            obj.material = new THREE.MeshBasicMaterial({});
-                            obj.material.color = new THREE.Color(1, 1, 1, 1);
+                    obj.material = new THREE.MeshBasicMaterial({});
+                    obj.material.color = new THREE.Color(1, 1, 1, 1);
 
-                            if (map) {
-                                map.colorSpace = THREE.SRGBColorSpace;
-                                obj.material.map = map;
-                            }
-
-                            original.dispose();
-                        }
-
-                        if (obj.children)
-                            for (const child of obj.children)
-                                setBasicMaterial(child);
+                    if (map) {
+                        map.colorSpace = THREE.SRGBColorSpace;
+                        obj.material.map = map;
                     }
 
-                    circusMesh = gltf.scene.children.filter(m => m.name == "Circus_Tent")[0].children[0];
+                    original.dispose();
+                }
 
-                    setBasicMaterial(gltf.scene);
+                if (obj.children)
+                    for (const child of obj.children)
+                        setBasicMaterial(child);
+            }
 
-                    textureLoader.load('/www/cubemap/cubemap.png', texture => {
-                        texture.mapping = THREE.EquirectangularReflectionMapping;
-                        const gramophoneMetal = gltf.scene.children.filter((m) => m.name.includes('Gramophone'))[1];
-                        gramophoneMetal.material.envMap = texture;
-                        gramophoneMetal.material.combine = THREE.MultiplyOperation;
-                        gramophoneMetal.material.reflectivity = 0.5;
-                    });
+            // find circusmesh for shapekey rope animation
+            circusMesh = gltf.scene.children.filter(m => m.name == "Circus_Tent")[0].children[0];
 
-                    textureLoader.load('booms.png', booms => {
-                        const mat = gltf.scene.children.filter((m) => m.name.includes('Bomen'))[0].material;
-                        booms.wrapS = THREE.RepeatWrapping;
-                        booms.wrapT = THREE.RepeatWrapping;
-                        mat.alphaTest = 0.5;
-                        mat.alphaMap = booms;
-                        mat.transparent = true;
-                        mat.texture = booms;
-                        mat.needsUpdate = true;
-                    });
+            // set gramophone reflection
+            {
+                const texture = await textureLoader.load('/www/cubemap/cubemap.png');
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                const gramophoneMetal = gltf.scene.children.filter((m) => m.name.includes('Gramophone'))[1];
+                gramophoneMetal.material.envMap = texture;
+                gramophoneMetal.material.combine = THREE.MultiplyOperation;
+                gramophoneMetal.material.reflectivity = 0.5;
+            }
 
-                    // disc
-                    discObject = gltf.scene.children.filter((m) => m.name.startsWith('Disc'))[0];
-                    const discArt = await getMusicDiscArt();
-                    gramophoneAudioElem.src = discArt?.AudioData || "sfx/musicless.ogg";
-                    textureLoader.load(discArt?.ImageData || "https://i.imgur.com/ohoJC7u.png", img => {
-                        img.colorSpace = THREE.SRGBColorSpace;
-                        img.flipY = false
-                        discObject.material.alphaTest = 0
-                        discObject.material.transparent = false
-                        discObject.material.color = new THREE.Color(1, 1, 1, 1)
-                        discObject.material.map = img
-                        discObject.material.needsUpdate = true
-                    });
+            // load trees
+            {
+                const booms = await textureLoader.load('booms.png');
+                const mat = gltf.scene.children.filter((m) => m.name.includes('Bomen'))[0].material;
+                booms.wrapS = THREE.RepeatWrapping;
+                booms.wrapT = THREE.RepeatWrapping;
+                mat.alphaTest = 0.5;
+                mat.alphaMap = booms;
+                mat.transparent = true;
+                mat.texture = booms;
+                mat.needsUpdate = true;
+            }
 
-                    // actual artworks
-                    getArtworkIds().then(async d => {
-                        console.log("art found: ", d);
-                        const ezels = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a, b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
-                        let i = 0;
-                        for (const id of d) {
-                            const w = Math.ceil(ezels[i].scale.x * 1024);
-                            const h = Math.ceil(ezels[i].scale.z * 1024);
-                            let img = await textureLoader.load(`/art/${id}/image/${w}/${h}`);
-                            img.colorSpace = THREE.SRGBColorSpace;
-                            img.flipY = false;
+            // load disc artwork
+            {
+                discObject = gltf.scene.children.filter((m) => m.name.startsWith('Disc'))[0];
+                const discArt = await getMusicDiscArt();
+                gramophoneAudioElem.src = discArt?.AudioData || "sfx/musicless.ogg";
+                const img = await textureLoader.load(discArt?.ImageData || "https://i.imgur.com/ohoJC7u.png");
+                img.colorSpace = THREE.SRGBColorSpace;
+                img.flipY = false;
+                discObject.material.alphaTest = 0;
+                discObject.material.transparent = false;
+                discObject.material.color = new THREE.Color(1, 1, 1, 1);
+                discObject.material.map = img;
+                discObject.material.needsUpdate = true;
+            }
 
-                            let mat = ezels[i].material;
-                            mat.alphaTest = 0.5;
-                            mat.transparent = false;
-                            mat.color = new THREE.Color(0.9, 0.9, 0.9, 1);
-                            mat.map = img;
-                            mat.needsUpdate = true;
-                            i++;
-                            if (i >= ezels.length)
-                                break;
-                        }
-                    }).catch(e => console.error(e));
+            // load image artworks
+            {
+                const ids = await getArtworkIds();
+                const ezels = gltf.scene.children.filter(m => m.name.startsWith("Art_")).sort((a, b) => (parseInt(a.name.substring(4)) - parseInt(b.name.substring(4))));
+                let i = 0;
+                for (const id of ids) {
+                    const w = Math.ceil(ezels[i].scale.x * 1024);
+                    const h = Math.ceil(ezels[i].scale.z * 1024);
+                    let img = await textureLoader.load(id ? `/art/${id}/image/${w}/${h}` : `https://i.imgur.com/FpDhu2S.jpg`);
+                    img.colorSpace = THREE.SRGBColorSpace;
+                    img.flipY = false;
 
-                    if (showSkyFriend)
-                        textureLoader.load("/www/luchtvriend.png", img => {
-                            img.colorSpace = THREE.SRGBColorSpace;
-                            const quadGeom = new THREE.PlaneGeometry(1, 1);
-                            const material = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
-                            material.alphaTest = 0
-                            material.transparent = true
-                            material.color = new THREE.Color(1, 1, 1, 1)
-                            material.map = img
-                            material.needsUpdate = true
-                            skyfriendObj = new THREE.Mesh(quadGeom, material);
-                            skyfriendObj.position.set(0, 150, 0);
-                            skyfriendObj.rotation.set(90, 0, 0);
-                            scene.add(skyfriendObj);
-                        });
+                    let mat = ezels[i].material;
+                    mat.alphaTest = 0.5;
+                    mat.transparent = false;
+                    mat.color = new THREE.Color(0.9, 0.9, 0.9, 1);
+                    mat.map = img;
+                    mat.needsUpdate = true;
+                    i++;
+                    if (i >= ezels.length)
+                        break;
+                }
+            }
 
-                    scene.add(gltf.scene);
-                    console.log("map loaded")
+            if (showSkyFriend) {
+                const particle = await textureLoader.loadAsync("/www/luchtvriend.png");
+                particle.colorSpace = THREE.SRGBColorSpace;
 
-                    new RGBELoader().load('enight-small-bright.hdr', (texture) => {
-                        texture.mapping = THREE.EquirectangularReflectionMapping;
-                        scene.environment = texture;
-                        scene.background = texture;
-                        render();
-                        console.log("hdri loaded")
-                        everythingIsLoaded = true;
+                const quadGeom = new THREE.PlaneGeometry(1, 1);
+                const material = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+                material.alphaTest = 0
+                material.transparent = true
+                material.color = new THREE.Color(1, 1, 1, 1)
+                material.map = particle
+                material.needsUpdate = true
 
-                        document.querySelectorAll('.loading').forEach(e => e.remove());
-                        document.querySelectorAll('.loaded').forEach(e => e.classList.remove('loaded'));
-                    }, p => { loadProgress = (p.loaded / p.total) }, e => {
-                        console.error(e);
-                        setErrorState(e);
-                    });
-                }, p => { loadProgress = (p.loaded / p.total); }, e => {
-                    console.error(e);
-                    setErrorState(e);
-                });
-            }, 0)
+                skyfriendObj = new THREE.Mesh(quadGeom, material);
+                skyfriendObj.position.set(0, 150, 0);
+                skyfriendObj.rotation.set(90, 0, 0);
+                scene.add(skyfriendObj);
+            }
+
+            scene.add(gltf.scene);
+
+            // load hdri
+            {
+                const rgbeLoader = new RGBELoader();
+                const hdri = await rgbeLoader.loadAsync('enight-small-bright.hdr');
+                hdri.mapping = THREE.EquirectangularReflectionMapping;
+                scene.environment = hdri;
+                scene.background = hdri;
+            }
+
+            everythingIsLoaded = true;
+            document.querySelectorAll('.loading').forEach(e => e.remove());
+            document.querySelectorAll('.loaded').forEach(e => e.classList.remove('loaded'));
         }
 
         function setErrorState(v) {
@@ -566,9 +564,8 @@
 
             listener.setPosition(worldPos.x, worldPos.y, worldPos.z);
             listener.setOrientation(dir.x, dir.y, dir.z, 0, 1, 0);
-            let rads = worldPos.distanceTo(new THREE.Vector3(43,playerHeight,18)) / 15;
-            if (Math.random() > Math.pow(rads, 0.25))
-            {
+            let rads = worldPos.distanceTo(new THREE.Vector3(43, playerHeight, 18)) / 15;
+            if (Math.random() > Math.pow(rads, 0.25)) {
                 playOneShotAmbience(pickRandom(sounds.clicks), 0.2);
             }
 

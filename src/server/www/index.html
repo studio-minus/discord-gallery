@@ -63,9 +63,8 @@
     <div class="loading"
         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
-            <span style="font-weight: bold; color: #FF0061">Studio Minus</span>
-            <span>Community Gallery</span>
-            <span id="state-display" style="opacity: 0.5; font-size: 0.8em">click to enter</span>
+            <img src="opening.svg" width="400px" alt="">
+            <span id="state-display" style="opacity: 0.5; font-size: 0.8em">Click to enter</span>
         </div>
     </div>
 
@@ -108,7 +107,7 @@
         const playerHeight = 1.5;
         const lookSpeed = 0.2;
         const fovs = [80, 30];
-        const renderScale = 0.75;
+        const renderScale = 1;
         let lastFovTarget = fovs[0];
         let playerVelocity = new THREE.Vector2(0, 0);
         let loadProgress = 0;
@@ -136,7 +135,8 @@
 
         const renderer = new THREE.WebGLRenderer();
         renderer.toneMappingExposure = 0.3;
-        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.outputColorSpace  = THREE.SRGBColorSpace ;
+        renderer.antialias = true;
         renderer.setSize(window.innerWidth * renderScale, window.innerHeight * renderScale);
         renderer.domElement.style.width = '100vw';
         renderer.domElement.style.height = '100vh';
@@ -175,7 +175,7 @@
                             obj.material.color = new THREE.Color(1, 1, 1, 1);
 
                             if (map) {
-                                map.encoding = THREE.sRGBEncoding;
+                                map.colorSpace = THREE.SRGBColorSpace;
                                 obj.material.map = map;
                             }
 
@@ -213,7 +213,7 @@
                     const discArt = await getMusicDiscArt();
                     gramophoneAudioElem.src = discArt?.AudioData || "sfx/musicless.ogg";
                     textureLoader.load(discArt?.ImageData || "https://i.imgur.com/ohoJC7u.png", img => {
-                        img.encoding = THREE.sRGBEncoding;
+                        img.colorSpace = THREE.SRGBColorSpace;
                         img.flipY = false
                         discObject.material.alphaTest = 0
                         discObject.material.transparent = false
@@ -231,7 +231,7 @@
                             const w = Math.ceil(ezels[i].scale.x * 1024);
                             const h = Math.ceil(ezels[i].scale.z * 1024);
                             let img = await textureLoader.load(`/art/${id}/image/${w}/${h}`);
-                            img.encoding = THREE.sRGBEncoding;
+                            img.colorSpace = THREE.SRGBColorSpace;
                             img.flipY = false;
 
                             let mat = ezels[i].material;
@@ -248,7 +248,7 @@
 
                     if (showSkyFriend)
                         textureLoader.load("/www/luchtvriend.png", img => {
-                            img.encoding = THREE.sRGBEncoding;
+                            img.colorSpace = THREE.SRGBColorSpace;
                             const quadGeom = new THREE.PlaneGeometry(1, 1);
                             const material = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
                             material.alphaTest = 0
@@ -474,7 +474,7 @@
 
             if (secondCounter > 1) {
                 secondCounter = 0;
-                if (Math.random() > 0.9) {
+                if (Math.random() > 0.96) {
                     const bear = await createPointSpeaker(
                         sounds.bear[Math.floor(Math.random() * sounds.bear.length)],
                         8, 0.8, 4, 4, 5);
@@ -500,7 +500,7 @@
 
                 if (Math.random() > 0.9 && worldPos.length() > 40) {
                     const w = await createPointSpeaker("sfx/running.wav",
-                        player.position.x + randomRange(-10, 10), 1, player.position.z + randomRange(-10, 10), 4, 15);
+                        player.position.x + randomRange(-10, 10), 1, player.position.z + randomRange(-10, 10), 1, 15);
                     w.start();
                     w.addEventListener('ended', () => w.disconnect());
                 }
@@ -517,6 +517,11 @@
                     const wilJeNietHoren = await createPointSpeaker(sounds.wilJeNietHoren, 40, 10, 0, 2, 60);
                     wilJeNietHoren.start();
                     wilJeNietHoren.addEventListener('ended', () => wilJeNietHoren.disconnect());
+                }
+                
+                if (Math.random() > 0.9 && insideness < 0.5) {
+                    // audioPath, x, y, z, rolloffFactor, maxDistance, autoConnect, refDistance
+                    playOneShotPoint(pickRandom(sounds.birds), randomRange(-100, 100), 25, randomRange(-100, 100), 1, 200, true, randomRange(5, 15));
                 }
 
                 if (!crowdSource && insideness > 0.5 && Math.random() > 0.994) {
@@ -554,9 +559,9 @@
             }
 
             if (gramophoneLowpassNode) {
-                gramophoneLowpassNode.frequency.value = mapRange(0, 1, 12000, 800, 1 - insideness);
+                let outsideness = Math.min(1, mapRange(8, 0, 0, 1, Math.max(0, 11 - worldPos.length())));
+                gramophoneLowpassNode.frequency.value = mapRange(0, 1, 20000, 600, outsideness);
             }
-            // console.log(worldPos);
             render(dt);
         }
 
@@ -565,7 +570,7 @@
             if (hasInteracted)
                 return;
             hasInteracted = true;
-            document.getElementById('state-display').textContent = 'loading...';
+            document.getElementById('state-display').textContent = 'Loading...';
             await setup();
             await tick();
         })

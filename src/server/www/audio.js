@@ -11,6 +11,10 @@ let gramophoneSource;
 let gramophoneLowpassNode;
 let gramophoneAudioElem;
 
+const genRange = (count) => Array.from({length: count}, (x, i) => i);
+
+const pickRandom = (array) => array[Math.floor(Math.random() * array.length)];
+
 const audioBufferCache = {};
 const sounds = {
     bear: [
@@ -39,6 +43,7 @@ const sounds = {
     distantFriend: "sfx/distant.ogg",
     peopleTalking: "sfx/people-talking.ogg",
     wilJeNietHoren: "sfx/ditwiljenooithoren.mp3",
+    birds: genRange(12).map(i => `sfx/birds/birds-${i}.ogg`)
 };
 
 async function initaliseAudio() {
@@ -92,20 +97,33 @@ async function loadAudio(path) {
     return buffer;
 }
 
-async function createPointSpeaker(audioPath, x, y, z, rolloffFactor = 2, maxDistance = 100, autoConnect = true) {
+async function createPointSpeaker(audioPath, x, y, z, rolloffFactor = 2, maxDistance = 100, autoConnect = true, refDistance = 1) {
     const source = audioCtx.createBufferSource();
     source.buffer = await loadAudio(audioPath);
-    const panner = setAudioPosition(source, x, y, z, rolloffFactor, maxDistance);
+    const panner = setAudioPosition(source, x, y, z, rolloffFactor, maxDistance, refDistance);
     if (autoConnect)
         panner.connect(audioCtx.destination);
 
     return source;
 }
 
-function playOneShot(file){
+function playOneShotPoint(audioPath, x, y, z, rolloffFactor = 2, maxDistance = 100, autoConnect = true, refDistance = 1){
+    async function a() {
+        const s = await createPointSpeaker(audioPath, x, y, z, rolloffFactor, maxDistance, autoConnect, refDistance);
+        s.loop = false;
+        s.start();
+        s.addEventListener('ended', () => s.disconnect());
+    }
+
+    a().then(() => {});
+}
+
+function playOneShotAmbience(file){
     async function a() {
         const s = await createAmbientSpeaker(file);
+        s.loop = false;
         s.start();
+        s.addEventListener('ended', () => s.disconnect());
     }
 
     a().then(() => {});

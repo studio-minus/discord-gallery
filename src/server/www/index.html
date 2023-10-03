@@ -246,20 +246,21 @@
                         }
                     }).catch(e => console.error(e));
 
-                    textureLoader.load("/www/luchtvriend.png", img => {
-                        img.encoding = THREE.sRGBEncoding;
-                        const quadGeom = new THREE.PlaneGeometry(1, 1);
-                        const material = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
-                        material.alphaTest = 0
-                        material.transparent = true
-                        material.color = new THREE.Color(1, 1, 1, 1)
-                        material.map = img
-                        material.needsUpdate = true
-                        skyfriendObj = new THREE.Mesh(quadGeom, material);
-                        skyfriendObj.position.set(0, 150, 0);
-                        skyfriendObj.rotation.set(90, 0, 0);
-                        scene.add(skyfriendObj);
-                    });
+                    if (showSkyFriend)
+                        textureLoader.load("/www/luchtvriend.png", img => {
+                            img.encoding = THREE.sRGBEncoding;
+                            const quadGeom = new THREE.PlaneGeometry(1, 1);
+                            const material = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+                            material.alphaTest = 0
+                            material.transparent = true
+                            material.color = new THREE.Color(1, 1, 1, 1)
+                            material.map = img
+                            material.needsUpdate = true
+                            skyfriendObj = new THREE.Mesh(quadGeom, material);
+                            skyfriendObj.position.set(0, 150, 0);
+                            skyfriendObj.rotation.set(90, 0, 0);
+                            scene.add(skyfriendObj);
+                        });
 
                     scene.add(gltf.scene);
                     console.log("map loaded")

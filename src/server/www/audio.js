@@ -71,7 +71,7 @@ async function initaliseAudio() {
     outdoorSound.connect(outdoorLowpassNode);
     outdoorSound.start();
 
-    const lamps = await createPointSpeaker('sfx/lamp.wav', 0, 9, 0, 2, 30);
+    const lamps = await createPointSpeaker('sfx/lamp.wav', 0, 9, 0, 2, 30, true, 0.5);
     lamps.loop = true;
     lamps.start();
 

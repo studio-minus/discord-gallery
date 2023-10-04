@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studio Minus Community Gallery</title>
+    <title>Studio Minus Community Art Gallery</title>
     <base href="/www/" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,8 +58,193 @@
         <span><span class="key">[Hold mouse button]</span>Look around</span>
         <span><span class="key">[WASD]</span>Move</span>
         <span><span class="key">[SPACE]</span>Zoom</span>
-        <span style="position: absolute; left: 1em; font-family: monospace; opacity: 0.2">v1.42 🎪 Studio Minus</span>
-        <span style="position: absolute; right: 1em; font-family: monospace; opacity: 0.5; cursor: pointer" id="sound-toggle">🔈</span>
+        <span style="position: absolute; left: 1em; font-family: monospace; opacity: 0.2; cursor: pointer;"
+            id="info-link"><span version-label></span> 🎪 Studio Minus</span>
+        <span style="position: absolute; right: 1em; font-family: monospace; opacity: 0.5; cursor: pointer"
+            id="sound-toggle">🔊</span>
+    </div>
+
+    <div class="loaded" id="info-panel"
+        style="width: 300px; overflow-y: auto; transform: translateX(-300px); position: absolute; left: 0; top:0; bottom: 0; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(20px); color:white; font-family: monospace; font-size: 1.2em">
+        <h2 style="text-align: center">Community Art Gallery</h2>
+        <p style="text-align: center"><span version-label></span> 🎪 Studio Minus</p>
+        <p style="text-align: center;">
+            <a style=" color: white !important" target="_blank" href="https://github.com/studio-minus/discord-gallery">
+                <img src="github-mark-white.svg" style="height: 1em; transform: translateY(2px);"> 
+                Source code
+            </a>
+        </p>
+        <p style="padding: 1em">
+            Created using .NET 7, paint.net, Audacity, Affinity Designer, and Blender
+        </p>
+        <p style="padding: 0 1em">
+            <a href="https://discord.gg/studio-minus-779898133064056862" target="_blank" style="color: white">Dedicated to our Discord server</a>
+        </p>
+        <hr />
+        <p style="padding-left: 1em">Using these libraries</p>
+        <details>
+            <summary style="font-weight: bold; cursor: pointer;">three.js</summary>
+            <div>
+                <pre style="overflow-x: auto;">
+The MIT License
+
+Copyright © 2010-2023 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+                </pre>
+            </div>
+        </details>
+        <details>
+            <summary style="font-weight: bold; cursor: pointer;">Discord.Net</summary>
+            <div>
+                <pre style="overflow-x: auto;">
+The MIT License (MIT)
+
+Copyright (c) 2015-2022 Discord.Net Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+                </pre>
+            </div>
+        </details>
+        <details>
+            <summary style="font-weight: bold; cursor: pointer;">ImageSharp</summary>
+            <div>
+                <pre style="overflow-x: auto;">
+Six Labors Split License
+Version 1.0, June 2022
+Copyright (c) Six Labors
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+1. Definitions.
+
+    "You" (or "Your") shall mean an individual or Legal Entity exercising permissions granted by this License.
+
+    "Source" form shall mean the preferred form for making modifications, including but not limited to software source
+    code, documentation source, and configuration files.
+
+    "Object" form shall mean any form resulting from mechanical transformation or translation of a Source form, including
+    but not limited to compiled object code, generated documentation, and conversions to other media types.
+
+    "Work" (or "Works") shall mean any Six Labors software made available under the License, as indicated by a
+    copyright notice that is included in or attached to the work.
+
+    "Direct Package Dependency" shall mean any Work in Source or Object form that is installed directly by You.
+
+    "Transitive Package Dependency" shall mean any Work in Object form that is installed indirectly by a third party
+    dependency unrelated to Six Labors.
+
+2. License
+
+    Works in Source or Object form are split licensed and may be licensed under the Apache License, Version 2.0 or a
+    Six Labors Commercial Use License.
+
+    Licenses are granted based upon You meeting the qualified criteria as stated. Once granted,
+    You must reference the granted license only in all documentation.
+
+    Works in Source or Object form are licensed to You under the Apache License, Version 2.0 if.
+
+    - You are consuming the Work in for use in software licensed under an Open Source or Source Available license.
+    - You are consuming the Work as a Transitive Package Dependency.
+    - You are consuming the Work as a Direct Package Dependency in the capacity of a For-profit company/individual with
+        less than 1M USD annual gross revenue.
+    - You are consuming the Work as a Direct Package Dependency in the capacity of a Non-profit organization
+        or Registered Charity.
+
+    For all other scenarios, Works in Source or Object form are licensed to You under the Six Labors Commercial License
+    which may be purchased by visiting https://sixlabors.com/pricing/.
+                </pre>
+            </div>
+        </details>
+        <details>
+            <summary style="font-weight: bold; cursor: pointer;">shortid</summary>
+            <div>
+                <pre style="overflow-x: auto;">
+MIT License
+
+Copyright (c) 2017 Bolorunduro Winner-Timothy B
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+                </pre>
+            </div>
+        </details>
+        <details>
+            <summary style="font-weight: bold; cursor: pointer;">Newtonsoft.Json</summary>
+            <div>
+                <pre style="overflow-x: auto;">
+The MIT License (MIT)
+
+Copyright (c) 2007 James Newton-King
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+                    
+                </pre>
+            </div>
+        </details>
+        <details>
+            <summary style="font-weight: bold; cursor: pointer;">WatsonWebserver</summary>
+            <div>
+                <pre style="overflow-x: auto;">
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+                </pre>
+            </div>
+        </details>
     </div>
 
     <div class="loading"
@@ -98,19 +283,48 @@
     <script src="worldSdf.js"></script>
 
     <script>
-        const soundButton = document.getElementById("sound-toggle");
-        soundButton.addEventListener('click', () => {
-            if (masterGain.gain.value > 0)
-            {
-                masterGain.gain.value = 0;
-                soundButton.innerText = '🔊';
-            }
-            else
-            {
-                masterGain.gain.value = 1;
-                soundButton.innerText = '🔈';
-            }
-        });
+        {
+            const openPanel = [
+                { transform: "translateX(-300px)" },
+                { transform: "translateX(0px)" },
+            ];
+
+            const closePanel = [
+                { transform: "translateX(0px)" },
+                { transform: "translateX(-300px)" },
+            ];
+
+            const panelTiming = { duration: 300, iterations: 1, fill: "forwards", easing: "ease-in-out" };
+
+            const soundButton = document.getElementById("sound-toggle");
+            soundButton.addEventListener('click', () => {
+                if (masterGain.gain.value > 0) {
+                    masterGain.gain.value = 0;
+                    soundButton.innerText = '🔈';
+                }
+                else {
+                    masterGain.gain.value = 1;
+                    soundButton.innerText = '🔊';
+                }
+            });
+
+            document.getElementById("info-link").addEventListener("click", () => {
+                const ip = document.getElementById('info-panel');
+                if (ip.hasAttribute('opened'))
+                    ip.removeAttribute('opened');
+                else
+                    ip.setAttribute('opened', true);
+
+                if (ip.hasAttribute('opened'))
+                    ip.animate(openPanel, panelTiming);
+                else
+                    ip.animate(closePanel, panelTiming);
+            });
+
+            document.querySelectorAll('*[version-label]').forEach(e => {
+                e.textContent = 'v1.43';
+            })
+        }
     </script>
 
     <script type="module">
@@ -215,10 +429,11 @@
             {
                 const texture = await textureLoader.load('/www/cubemap/cubemap.png');
                 texture.mapping = THREE.EquirectangularReflectionMapping;
+                
                 const gramophoneMetal = gltf.scene.children.filter((m) => m.name.includes('Gramophone'))[1];
                 gramophoneMetal.material.envMap = texture;
                 gramophoneMetal.material.combine = THREE.MultiplyOperation;
-                gramophoneMetal.material.reflectivity = 0.5;
+                gramophoneMetal.material.reflectivity = 0.8;
             }
 
             // load trees
@@ -549,8 +764,7 @@
                     wilJeNietHoren.addEventListener('ended', () => wilJeNietHoren.disconnect());
                 }
 
-                if (Math.random() > 0.9 && insideness < 0.5) {
-                    // audioPath, x, y, z, rolloffFactor, maxDistance, autoConnect, refDistance
+                if (Math.random() > 0.85 && insideness < 0.5) {
                     playOneShotPoint(pickRandom(sounds.birds), randomRange(-100, 100), 25, randomRange(-100, 100), 1, 200, true, randomRange(5, 15));
                 }
 
@@ -562,7 +776,7 @@
                     crowdGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
                     crowdGainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 2);
 
-                    node.connect(crowdGainNode).connect(audioCtx.destination);
+                    node.connect(crowdGainNode).connect(masterGain);
                     crowdSource.start();
                     crowdSource.loop = true;
                 }

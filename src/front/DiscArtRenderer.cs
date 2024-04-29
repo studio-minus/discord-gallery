@@ -1,4 +1,8 @@
-﻿namespace gallery.front;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+
+namespace gallery.front;
 
 public class DiscArtRenderer : IArtRenderer
 {

@@ -11,6 +11,7 @@ internal class Program
 
     private static async Task Main(string[] args)
     {
+        BinaryCache.Initialise();
         Configuration.Load(args.Length > 0 ? args[0] : "config.json");
         await RunServer();
     }

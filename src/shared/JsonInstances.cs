@@ -10,7 +10,7 @@ public static class JsonInstances
     {
         Settings = new JsonSerializerSettings
         {
-            Formatting =  Formatting.Indented,
+            Formatting = Formatting.Indented,
             TypeNameHandling = TypeNameHandling.All,
         };
     }

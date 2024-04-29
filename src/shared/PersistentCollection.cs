@@ -8,7 +8,7 @@ public class PersistentCollection<T> : IDisposable, IReadOnlyCollection<T>
 {
     public readonly FileInfo Source;
 
-    private List<T> coll = new();
+    private List<T> coll = [];
     private readonly CerasSerializer ceras = new();
     private readonly Mutex manipulation = new();
     private readonly Mutex saving = new();

@@ -14,7 +14,9 @@ public class GalleryServer : IDisposable
 
     public GalleryServer()
     {
-        gallery = new ArtGalleryFront(new DirectoryInfo(Path.GetFullPath(Configuration.Current.ArtPath))); //TODO is dit nodig?
+        gallery = new ArtGalleryFront(
+            new DirectoryInfo(Path.GetFullPath(Configuration.Current.ArtPath)), //TODO is deze fullpath shit nodig?
+            new DirectoryInfo(Path.GetFullPath(Configuration.Current.CachePath))); 
         Bot = new Bot(Configuration.Current.DiscordBotToken, Configuration.Current.ChannelId, Configuration.Current.GuildId);
     }
 

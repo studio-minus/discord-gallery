@@ -1,26 +1,29 @@
 ﻿using gallery.shared;
 using Newtonsoft.Json;
 using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Net.Http.Headers;
 using System.Text;
 using WatsonWebserver;
+using WatsonWebserver.Core;
 using Configuration = gallery.shared.Configuration;
-using HttpMethod = WatsonWebserver.HttpMethod;
+using HttpMethod = WatsonWebserver.Core.HttpMethod;
 
 namespace gallery.front;
 
 public class ArtGalleryFront : IDisposable
 {
     public readonly DirectoryInfo ArtDirectory;
+    public readonly DirectoryInfo CacheDirectory;
 
     private static readonly ConcurrentDictionary<string, Submission> artworks = new();
     private static readonly ConcurrentDictionary<string, byte[]> responseCache = new();
     private static readonly ImageArtCache imageArtCache;
     private static readonly ImageArtCache discArtCache;
 
-    private Server? server;
+    private Webserver? server;
 
     static ArtGalleryFront()
     {
@@ -28,9 +31,10 @@ public class ArtGalleryFront : IDisposable
         discArtCache = new ImageArtCache(new DiscArtRenderer(Configuration.Current.DiscOverlayPath));
     }
 
-    public ArtGalleryFront(DirectoryInfo artDirectory)
+    public ArtGalleryFront(DirectoryInfo artDirectory, DirectoryInfo cacheDirectory)
     {
         ArtDirectory = artDirectory;
+        CacheDirectory = cacheDirectory;
 
         RefreshArtDirectory();
     }
@@ -83,7 +87,7 @@ public class ArtGalleryFront : IDisposable
     {
         server?.Dispose();
 
-            server = new WatsonWebserver.Server(Configuration.Current.Ip, Configuration.Current.Port, false, Index);
+        server = new Webserver(new WatsonWebserver.Core.WebserverSettings(Configuration.Current.Ip, Configuration.Current.Port, false), Index);
 
         server.Settings.Debug.Responses = true;
         server.Settings.Debug.Routing = true;
@@ -94,7 +98,21 @@ public class ArtGalleryFront : IDisposable
         {
             Console.Error.WriteLine("{0}: {1}", e.Url, e.Exception.Message);
         };
-        server.Routes.Content.Add(Configuration.Current.FrontPath, true);
+
+        server.Routes.PreAuthentication.Content.Add(Configuration.Current.FrontPath, true);
+        server.Routes.PreAuthentication.Content.Add(Configuration.Current.CachePath, true);
+
+        var st = server.Routes.PreAuthentication.Static;
+        st.Add(HttpMethod.GET, "/", Index);
+        st.Add(HttpMethod.GET, "/art", GetAllArt);
+        st.Add(HttpMethod.GET, "/art/images", GetAllArtImages);
+        st.Add(HttpMethod.GET, "/art/musicdisc", GetMusicDisc);
+
+        var par = server.Routes.PreAuthentication.Parameter;
+        par.Add(HttpMethod.GET, "/art/{id}/image/{w}/{h}", GetArtImage);
+        par.Add(HttpMethod.GET, "/art/{id}/audio", GetArtAudio);
+        par.Add(HttpMethod.GET, "/art/{id}", GetArt);
+
         server.Start();
 
         Console.WriteLine("Listening on {0}:{1} ", Configuration.Current.Ip, Configuration.Current.Port);
@@ -105,8 +123,7 @@ public class ArtGalleryFront : IDisposable
         server?.Stop();
     }
 
-    [StaticRoute(HttpMethod.GET, "/art")]
-    public static async Task GetAllArt(HttpContext ctx)
+    public async Task GetAllArt(HttpContextBase ctx)
     {
         var sb = new StringBuilder();
         sb.Append('[');
@@ -121,8 +138,7 @@ public class ArtGalleryFront : IDisposable
         await ctx.Response.Send(sb.ToString());
     }
 
-    [StaticRoute(HttpMethod.GET, "/art/images")]
-    public static async Task GetAllArtImages(HttpContext ctx)
+    public async Task GetAllArtImages(HttpContextBase ctx)
     {
         var sb = new StringBuilder();
         sb.Append('[');
@@ -141,9 +157,8 @@ public class ArtGalleryFront : IDisposable
         sb.Append(']');
         await ctx.Response.Send(sb.ToString());
     }
-     
-    [StaticRoute(HttpMethod.GET, "/art/musicdisc")]
-    public static async Task GetMusicDisc(HttpContext ctx)
+
+    public async Task GetMusicDisc(HttpContextBase ctx)
     {
         var artwork = artworks.Where(d => d.Value is CompositionSubmission).FirstOrDefault();
         ctx.Response.ContentType = "application/json";
@@ -156,14 +171,13 @@ public class ArtGalleryFront : IDisposable
         var obj = new
         {
             AudioData = $"/art/{artwork.Key}/audio",
-            ImageData= $"/art/{artwork.Key}/image/128/128"
+            ImageData = $"/art/{artwork.Key}/image/128/128"
         };
-        
+
         await ctx.Response.Send(JsonConvert.SerializeObject(obj));
     }
 
-    [ParameterRoute(HttpMethod.GET, "/art/{id}/image/{w}/{h}")]
-    public static async Task GetArtImage(HttpContext ctx)
+    public async Task GetArtImage(HttpContextBase ctx)
     {
         var id = ctx.Request.Url.Parameters["id"] ?? throw new Exception("id parameter missing");
         int w = int.Parse(ctx.Request.Url.Parameters["w"] ?? "128");
@@ -190,7 +204,7 @@ public class ArtGalleryFront : IDisposable
         else if (!responseCache.TryGetValue(ctx.Request.Url.Full, out b)) //not found, send wtf img
         {
             using var m = new MemoryStream();
-            var img = SixLabors.ImageSharp.Image.Load<Rgba32>("error.png");
+            using var img = SixLabors.ImageSharp.Image.Load<Rgba32>("error.png");
             img.Save(m, new WebpEncoder() { Quality = 100 });
             b = m.ToArray();
             if (!responseCache.TryAdd(ctx.Request.Url.Full, b))
@@ -201,10 +215,9 @@ public class ArtGalleryFront : IDisposable
         await ctx.Response.Send(b);
     }
 
-    [ParameterRoute(HttpMethod.GET, "/art/{id}/audio")]
-    public static async Task GetArtAudio(HttpContext ctx)
+    public async Task GetArtAudio(HttpContextBase ctx)
     {
-        var id = ctx.Request.Url.Parameters["id"];
+        var id = ctx.Request.Url.Parameters["id"] ?? throw new Exception("id parameter missing");
 
         byte[]? b;
         if (artworks.TryGetValue(id, out var artwork) && artwork is CompositionSubmission comp)
@@ -226,8 +239,7 @@ public class ArtGalleryFront : IDisposable
         await ctx.Response.Send(b);
     }
 
-    [ParameterRoute(HttpMethod.GET, "/art/{id}")]
-    public static async Task GetArt(HttpContext ctx)
+    public async Task GetArt(HttpContextBase ctx)
     {
         var id = ctx.Request.Url.Parameters["id"];
         if (artworks.TryGetValue(id, out var artwork))
@@ -267,8 +279,8 @@ public class ArtGalleryFront : IDisposable
         await ctx.Response.Send("Artwork not found");
     }
 
-    [StaticRoute(HttpMethod.GET, "/")]
-    public static async Task Index(HttpContext ctx)
+
+    public async Task Index(HttpContextBase ctx)
     {
         ctx.Response.ContentType = "text/html";
         var str = await File.ReadAllBytesAsync("www/index.html");

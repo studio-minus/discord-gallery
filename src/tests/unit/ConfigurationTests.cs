@@ -26,9 +26,6 @@ public class ConfigurationTests
 
             Ip = "1.2.3.4",
             Port = 29831,
-
-            SslCert = "japan.pfx",
-            SslCertPassword = "plaintext lmfao who cares this file should not be accessible by anyone but you"
         };
 
         File.WriteAllText(path, JsonSerializer.Serialize(config));

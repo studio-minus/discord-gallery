@@ -104,9 +104,6 @@ public class Bot : IDisposable
 
         // Ik hoef hier toch niet the checken voor guild ID omdat channel IDs universeel zijn
 
-        //if (arg.Channel is not IGuildChannel g || g.GuildId != guildId)
-        //    return Task.CompletedTask;
-
         if (msg.Type is MessageType.Reply && msg.Reference != null && msg.Reference.MessageId.IsSpecified)
         {
             var replyTo = msg.Reference.MessageId;
@@ -120,7 +117,7 @@ public class Bot : IDisposable
                     continue;
 
                 SubmissionReference artwork;
-                
+
                 // TODO this is not very expandable and this and .contentTypeFilters should rely on the same values
                 if (attachment.ContentType.StartsWith("audio", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -128,11 +125,15 @@ public class Bot : IDisposable
                     var img = await downloader.GetAsync(msg.Author.GetAvatarUrl() ?? msg.Author.GetDefaultAvatarUrl());
                     var b64 = Convert.ToBase64String(await img.Content.ReadAsByteArrayAsync());
                     var dataString = $"data:{(img.Content.Headers.ContentType?.ToString() ?? "image/webp")};base64," + b64;
-                    artwork = new CompositionReference(msg.Id, msg.Author.Username, dataString, attachment.Url);
+                    var cached = await BinaryCache.Store(attachment.Url);
+                    artwork = new CompositionReference(msg.Id, msg.Author.Username, dataString, cached);
                     downloader.Dispose();
                 }
                 else
-                    artwork = new ImageSubmissionReference(msg.Id, msg.Author.Username, attachment.Url);
+                {
+                    var cached = await BinaryCache.Store(attachment.Url);
+                    artwork = new ImageSubmissionReference(msg.Id, msg.Author.Username, cached);
+                }
 
                 artwork.Name = string.IsNullOrWhiteSpace(msg.Content) ? null : msg.Content;
                 Curator.Add(artwork);

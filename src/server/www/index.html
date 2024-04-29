@@ -13,7 +13,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="favicon.png">
 
-
     <style>
         body,
         html {
@@ -59,18 +58,18 @@
         <span><span class="key">[WASD]</span>Move</span>
         <span><span class="key">[SPACE]</span>Zoom</span>
         <span style="position: absolute; left: 1em; font-family: monospace; opacity: 0.2; cursor: pointer;"
-            id="info-link"><span version-label></span> 🎪 Studio Minus</span>
+              id="info-link"><span version-label></span> 🎪 Studio Minus</span>
         <span style="position: absolute; right: 1em; font-family: monospace; opacity: 0.5; cursor: pointer"
-            id="sound-toggle">🔊</span>
+              id="sound-toggle">🔊</span>
     </div>
 
     <div class="loaded" id="info-panel"
-        style="width: 300px; overflow-y: auto; transform: translateX(-300px); position: absolute; left: 0; top:0; bottom: 0; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(20px); color:white; font-family: monospace; font-size: 1.2em">
+         style="width: 300px; overflow-y: auto; transform: translateX(-300px); position: absolute; left: 0; top:0; bottom: 0; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(20px); color:white; font-family: monospace; font-size: 1.2em">
         <h2 style="text-align: center">Community Art Gallery</h2>
         <p style="text-align: center"><span version-label></span> 🎪 Studio Minus</p>
         <p style="text-align: center;">
             <a style=" color: white !important" target="_blank" href="https://github.com/studio-minus/discord-gallery">
-                <img src="github-mark-white.svg" style="height: 1em; transform: translateY(2px);"> 
+                <img src="github-mark-white.svg" style="height: 1em; transform: translateY(2px);">
                 Source code
             </a>
         </p>
@@ -248,7 +247,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     </div>
 
     <div class="loading"
-        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
+         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: white; font-size: 2em; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
             <img src="opening.svg" width="400px" alt="">
             <span id="state-display" style="opacity: 0.5; font-size: 0.8em">Click to enter</span>
@@ -256,7 +255,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     </div>
 
     <div class="error"
-        style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
+         style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 100;color: red; display: grid; place-items: center;">
         <div style="display: flex; flex-direction: column; place-content: center; text-align: center">
             <span style="font-weight: bold; font-size: 2em; ">ERROR</span>
             <span style="font-size: 1.5em">Everything is broken.</span>
@@ -322,7 +321,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             });
 
             document.querySelectorAll('*[version-label]').forEach(e => {
-                e.textContent = 'v1.43';
+                e.textContent = 'v1.45';
             })
         }
     </script>
@@ -355,7 +354,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         let shouldGramophonePlay = false;
         let canInteractWithGramophone = false;
         let skyfriendObj;
-        let showSkyFriend = Math.random() > 0.9995;
+        let showSkyFriend = Math.random() > 0.995;
 
         const scene = new THREE.Scene();
         const player = new THREE.Group();
@@ -429,7 +428,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             {
                 const texture = await textureLoader.load('/www/cubemap/cubemap.png');
                 texture.mapping = THREE.EquirectangularReflectionMapping;
-                
+
                 const gramophoneMetal = gltf.scene.children.filter((m) => m.name.includes('Gramophone'))[1];
                 gramophoneMetal.material.envMap = texture;
                 gramophoneMetal.material.combine = THREE.MultiplyOperation;
@@ -520,6 +519,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             everythingIsLoaded = true;
             document.querySelectorAll('.loading').forEach(e => e.remove());
             document.querySelectorAll('.loaded').forEach(e => e.classList.remove('loaded'));
+
+            if (showSkyFriend) {
+                window.setTimeout(() => playOneShotAmbience(sounds.distantFriend, 1), 5500);
+                window.setTimeout(() => playOneShotAmbience(sounds.distantFriendDepart, 1), 40800);
+            }
         }
 
         function setErrorState(v) {

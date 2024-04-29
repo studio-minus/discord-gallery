@@ -25,6 +25,7 @@ const sounds = {
         "sfx/bear-04.wav",
         "sfx/bear-05.wav",
         "sfx/bear-06.wav",
+        "sfx/bear-07.wav",
     ],
     creaking: [
         "sfx/wood-creak-01.wav",

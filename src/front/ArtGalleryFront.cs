@@ -224,7 +224,10 @@ public class ArtGalleryFront : IDisposable
         {
             if (!responseCache.TryGetValue(ctx.Request.Url.Full, out b))
             {
-                using var r = new HttpClient();
+                using var r = new HttpClient
+                {
+                    BaseAddress = new Uri(server!.Settings.Prefix)
+                };
                 var response = await r.GetAsync(comp.AudioData);
                 var mime = response.Content.Headers.ContentType ?? MediaTypeHeaderValue.Parse("audio/mp3");
                 b = await response.Content.ReadAsByteArrayAsync();

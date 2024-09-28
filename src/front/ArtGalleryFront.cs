@@ -96,7 +96,7 @@ public class ArtGalleryFront : IDisposable
         server.Events.Logger = Console.WriteLine;
         server.Events.ExceptionEncountered += (o, e) =>
         {
-            Console.Error.WriteLine("{0}: {1}", e.Url, e.Exception.Message);
+            Console.Error.WriteLine("{0}: {1}\n\t{2}", e.Url, e.Exception.Message, e.Exception.StackTrace);
         };
 
         server.Routes.PreAuthentication.Content.Add(Configuration.Current.FrontPath, true);
@@ -201,7 +201,8 @@ public class ArtGalleryFront : IDisposable
                     Console.Error.WriteLine("Failed to cache artwork {0}", id);
             }
         }
-        else if (!responseCache.TryGetValue(ctx.Request.Url.Full, out b)) //not found, send wtf img
+        else if (!responseCache.TryGetValue(ctx.Request.Url.Full, out b))
+        //not found, send wtf img
         {
             using var m = new MemoryStream();
             using var img = SixLabors.ImageSharp.Image.Load<Rgba32>("error.png");

@@ -29,7 +29,7 @@ public class ArtCacheTests
     public void NullRenderer()
     {
         var artwork = new ImageSubmission { ImageData = "data:..." };
-        var cache = new ImageArtCache(null);
-        Assert.ThrowsExceptionAsync<Exception>(async () => await cache.Load(100, 100, artwork));
+        var cache = new ImageArtCache(null!);
+        Assert.ThrowsExactlyAsync<Exception>(async () => await cache.Load(100, 100, artwork));
     }
 }

@@ -67,7 +67,7 @@ public class GalleryServer : IDisposable
             Console.WriteLine("Saved new composition to exhibition: {0}", exhibition.Composition.Name);
         }
 
-        Task.Run(async () => await Bot.SendPublishMessage(exhibition));
+        //Task.Run(async () => await Bot.SendPublishMessage(exhibition));
 
         // read new exhibition
         gallery.RefreshArtDirectory();

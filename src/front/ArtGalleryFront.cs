@@ -8,6 +8,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using WatsonWebserver;
 using WatsonWebserver.Core;
+using WatsonWebserver.Lite;
 using Configuration = gallery.shared.Configuration;
 using HttpMethod = WatsonWebserver.Core.HttpMethod;
 
@@ -23,7 +24,7 @@ public class ArtGalleryFront : IDisposable
     private static readonly ImageArtCache imageArtCache;
     private static readonly ImageArtCache discArtCache;
 
-    private Webserver? server;
+    private WebserverLite? server;
 
     static ArtGalleryFront()
     {
@@ -35,6 +36,9 @@ public class ArtGalleryFront : IDisposable
     {
         ArtDirectory = artDirectory;
         CacheDirectory = cacheDirectory;
+
+        if (!artDirectory.Exists) artDirectory.Create();
+        if (!cacheDirectory.Exists) cacheDirectory.Create();
 
         RefreshArtDirectory();
     }
@@ -87,7 +91,7 @@ public class ArtGalleryFront : IDisposable
     {
         server?.Dispose();
 
-        server = new Webserver(new WatsonWebserver.Core.WebserverSettings(Configuration.Current.Ip, Configuration.Current.Port, false), Index);
+        server = new WebserverLite(new WebserverSettings(Configuration.Current.Ip, Configuration.Current.Port, false), Index);
 
         server.Settings.Debug.Responses = true;
         server.Settings.Debug.Routing = true;

@@ -7,13 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Studio Minus Community Art Gallery</title>
     <base href="/www/" />
-
-    <link rel="preconnect" href="https://api.fonts.coollabs.io">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://api.fonts.coollabs.io/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="favicon.png">
 
     <style>
+        @import url(https://fonts.bunny.net/css?family=playfair-display:400,700);
+
         body,
         html {
             margin: 0;
@@ -321,7 +319,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             });
 
             document.querySelectorAll('*[version-label]').forEach(e => {
-                e.textContent = 'v2.00';
+                e.textContent = 'v2.0.1';
             })
         }
     </script>

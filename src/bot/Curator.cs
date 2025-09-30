@@ -121,12 +121,17 @@ public class Curator : IDisposable
         }
     }
 
+    public void SaveArtCollection()
+    {
+        art.SaveToSource();
+    }
+
     public Exhibition GetExhibition(int maxImageCount)
     {
         var imgs = GetBestImageArt(maxImageCount);
         var comp = GetBestComposition(1).FirstOrDefault();
 
-        return new Exhibition(imgs.ToArray(), comp);
+        return new Exhibition([.. imgs], comp);
     }
 
     public IEnumerable<ImageSubmission> GetBestImageArt(int amount)

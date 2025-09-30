@@ -1,6 +1,8 @@
-﻿using Discord.WebSocket;
-using Discord;
+﻿using Discord;
+using Discord.Rest;
+using Discord.WebSocket;
 using gallery.shared;
+using System.Collections.Generic;
 using System.Xml.Linq;
 
 namespace gallery.bot;
@@ -110,10 +112,20 @@ public class Bot : IDisposable
             Curator.IncrementScore(replyTo.Value);
         }
 
+        await foreach(var item in ProcessMessage(msg))
+        {
+            Console.WriteLine("Art added for {1}: {0}", item.ImageUrl, item.MessageId);
+        }  
+    }
+
+    private async IAsyncEnumerable<SubmissionReference> ProcessMessage(IMessage msg)
+    {
         foreach (var attachment in msg.Attachments)
             if (contentTypeFilters.All(filter => filter(attachment.ContentType)))
             {
-                if (attachment.Size > 8_000_000) // skip files greater than 8 MB
+                Console.WriteLine(attachment.ContentType);
+
+                if (attachment.Size > 16_000_000) // skip files greater than 16 MB
                     continue;
 
                 SubmissionReference artwork;
@@ -137,9 +149,8 @@ public class Bot : IDisposable
 
                 artwork.Name = string.IsNullOrWhiteSpace(msg.Content) ? null : msg.Content;
                 Curator.Add(artwork);
+                yield return  artwork;
             }
-
-        return;
     }
 
     private Task OnMessageDeleted(Cacheable<IMessage, ulong> msg, Cacheable<IMessageChannel, ulong> channel)
@@ -207,5 +218,28 @@ public class Bot : IDisposable
     {
         client?.Dispose();
         Curator.Dispose();
+    }
+
+    public async Task ForceRepopulate()
+    {
+        Curator.Clear();
+        var channel = await client.Rest.GetChannelAsync(channelId);
+
+        if (channel is RestTextChannel text)
+        {
+            var msgs = await text.GetMessagesAsync(200).FlattenAsync();
+
+            foreach (var message in msgs)
+            {
+                await foreach (var artwork in ProcessMessage(message))
+                {
+                    artwork.Score = message.Reactions.Count;
+                    // we should really be checking for replies and count them as well, but this is not provided
+                    // ideally, we should check all messages and save their parent so we can count this
+                }
+            }
+
+            Curator.SaveArtCollection();
+        }
     }
 }

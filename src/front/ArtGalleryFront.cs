@@ -1,10 +1,11 @@
 ﻿using gallery.shared;
 using Newtonsoft.Json;
-using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Net.Http.Headers;
+using System.Net.Mime;
 using System.Text;
 using WatsonWebserver;
 using WatsonWebserver.Core;
@@ -199,24 +200,23 @@ public class ArtGalleryFront : IDisposable
             {
                 var img = await cache.Load(w, h, artwork);
                 using var m = new MemoryStream();
-                img.Save(m, new WebpEncoder() { Quality = 95 });
+                img.Save(m, new JpegEncoder() { Quality = 95 });
                 b = m.ToArray();
                 if (!responseCache.TryAdd(ctx.Request.Url.Full, b))
                     Console.Error.WriteLine("Failed to cache artwork {0}", id);
             }
         }
-        else if (!responseCache.TryGetValue(ctx.Request.Url.Full, out b))
-        //not found, send wtf img
+        else if (!responseCache.TryGetValue(ctx.Request.Url.Full, out b)) //not found, send wtf img
         {
             using var m = new MemoryStream();
             using var img = SixLabors.ImageSharp.Image.Load<Rgba32>("error.png");
-            img.Save(m, new WebpEncoder() { Quality = 100 });
+            img.Save(m, new JpegEncoder() { Quality = 100 });
             b = m.ToArray();
             if (!responseCache.TryAdd(ctx.Request.Url.Full, b))
                 Console.Error.WriteLine("Failed to cache artwork {0}", id);
         }
 
-        ctx.Response.ContentType = "image/webp";
+        ctx.Response.ContentType = MediaTypeNames.Image.Jpeg;
         await ctx.Response.Send(b);
     }
 

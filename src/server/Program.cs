@@ -51,6 +51,9 @@ internal class Program
                                 await galleryServer.Stop();
                             shouldExitForReal = true;
                             break;
+                        case "forceRepopulate":
+                            await galleryServer?.Bot.ForceRepopulate();
+                            break;
                         case "publish":
                             Console.WriteLine("publish started");
                             galleryServer?.Publish();
@@ -61,7 +64,6 @@ internal class Program
                                 _ = Task.Run(() => galleryServer.Bot.SendPublishMessage(galleryServer.Bot.Curator.GetExhibition(5)));
                             break;
                         default:
-                            Console.WriteLine("unknown command");
                             break;
                     }
                 }

@@ -57,7 +57,7 @@ public static class BinaryCache
 
     public static string GetCachedPathFor(string input)
     {
-        return Path.Combine(Configuration.Current.CachePath, XxHash3.HashToUInt64(Encoding.UTF8.GetBytes(input.ToLowerInvariant())).ToString("x2")).Replace('\\', '/');
+        return Configuration.Current.CachePath + '/' +  XxHash3.HashToUInt64(Encoding.UTF8.GetBytes(input.ToLowerInvariant())).ToString("x2");
     }
 
     public static void Initialise()
